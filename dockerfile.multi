@@ -1,0 +1,30 @@
+# syntax=docker/dockerfile:1
+
+FROM golang:latest AS build
+
+WORKDIR /server
+
+COPY go.mod ./
+COPY go.sum ./
+
+RUN go mod download
+
+COPY ./ ./
+
+RUN CGO_ENABLED=0 go build -o ./srv cmd/server.go
+
+
+## Deploy
+
+# FROM gcr.io/distroless/base-debian11
+# FROM gcr.io/distroless/static-debian11
+FROM scratch
+
+WORKDIR /
+
+COPY --from=build ./server /
+
+EXPOSE 8080
+
+# CMD ["/server"]
+ENTRYPOINT ["/srv"]

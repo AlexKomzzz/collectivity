@@ -1,0 +1,76 @@
+version: '3.8'
+
+services:
+  # nginx:
+  #   container_name: nginx
+  #   hostname: nginx
+  #   image: nginx:latest
+  #   volumes:
+  #     #- ./var/log/nginx:/var/log/nginx #log файлы.
+  #     - /home/alex/server/etc/nginx/conf:/etc/nginx/conf.d:ro #Конфигурация nginx.
+  #     #- ./etc/nginx/sites-enabled:/etc/nginx/sites-enabled:ro #Конфигурация площадок.
+  #     #- ./volumes/etc/nginx/ssl:/etc/nginx/ssl:ro #сертификаты
+  #     - ./etc/www/alexkomzzz.ml:/var/www/alexkomzzz.ml #Домашняя директория
+  #     # - etc-letsencrypt:/etc/letsencrypt
+  #     # - www-html:/var/www/certbot
+  #   ports:
+  #     - "80:80"
+  #     #- "443:443"
+  #   links:
+  #     - go-api
+  #   restart:
+  #     always
+  #   networks:
+  #     net-server:
+  #       ipv4_address: 172.16.1.4  
+  db:
+    image: postgres:latest
+    restart: always
+    container_name: db
+    ports:
+      - 5432:5432
+    volumes:
+      - chat:/var/lib/postgresql/data
+    environment:
+      - POSTGRES_PASSWORD=qwerty
+    networks:
+      net-server:
+        ipv4_address: 172.16.1.3
+  go-api:
+    build:
+      context: .
+      dockerfile: dockerfile.multi
+    container_name: go-api
+    hostname: go-api
+    depends_on:
+      - db
+    ports:
+      - 8080:8080
+    restart: always
+    deploy:
+      restart_policy:
+        condition: on-failure
+    networks:
+      net-server:
+        ipv4_address: 172.16.1.2
+  # certbot:
+  #   image: certbot/certbot
+  #   depends_on:
+  #     - nginx
+  #   container_name: certbot
+  #   volumes:
+  #     - etc-letsencrypt:/etc/letsencrypt
+  #     - www-html:/var/www/certbot
+  #   command: certonly --webroot --webroot-path=/var/www/certbot --email komalex203@gmail.com --agree-tos --no-eff-email -d alexkomzzz.ml
+  
+networks:
+  net-server:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.16.1.0/24
+
+volumes:
+  chat:
+#   www-html:
+#   etc-letsencrypt:
