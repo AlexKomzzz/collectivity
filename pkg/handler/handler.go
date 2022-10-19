@@ -49,7 +49,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		google := auth.Group("/google")
 		{
 			google.GET("/login", h.oauthGoogleLogin)
-			google.POST("/callback", h.oauthGoogleCallback)
+			google.GET("/callback", h.oauthGoogleCallback)
 		}
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)

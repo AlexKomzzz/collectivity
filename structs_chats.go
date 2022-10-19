@@ -7,7 +7,14 @@ type User struct {
 	Password string `json:"password"`
 }
 
-type Message struct {
+type User_Google struct {
+	Id       int    `json:"id"`
+	Email    string `json:"email"`
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
+/*type Message struct {
 	Id       int    `json:"id" db:"id"`
 	Date     string `json:"date" db:"date"`
 	Username string `json:"username" db:"username"`
@@ -20,3 +27,4 @@ type GroupChat struct {
 	Admin        int    `json:"admin" db:"admin"`
 	Participants []int  `json:"participants"`
 }
+*/
