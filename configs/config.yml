@@ -1,5 +1,6 @@
 port: ":8080"
 host: "localhost"
+GOOGLE_OAUTH_CLIENT_ID: "995350173631-6ffgi1nkh711d7g23dq7no9vgvl536r5.apps.googleusercontent.com"
 
 db:
   username: "postgres"

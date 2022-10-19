@@ -1,7 +1,6 @@
 package main
 
 import (
-	"log"
 	"os"
 	"os/signal"
 	"syscall"
@@ -9,6 +8,7 @@ import (
 	"github.com/AlexKomzzz/collectivity/pkg/handler"
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
 	"github.com/AlexKomzzz/collectivity/pkg/service"
+	"github.com/joho/godotenv"
 	_ "github.com/lib/pq"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -31,7 +31,13 @@ func main() {
 
 	// Инициализируем конфигурации
 	if err := initConfig(); err != nil {
-		log.Fatalln("error initializing configs: ", err)
+		logrus.Fatalln("error initializing configs: ", err)
+		return
+	}
+
+	// загрузка переменных окружения из файла .env
+	if err := godotenv.Load(); err != nil { //Загрузка переменного окружения (для передачи пароля из файла .env)
+		logrus.Fatalf("error loading env variables: %s", err.Error())
 		return
 	}
 
