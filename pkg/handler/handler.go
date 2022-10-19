@@ -42,8 +42,15 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 	mux.NoRoute(Response404) // При неверном URL вызывает ф-ю Response404
 
+	mux.StaticFile("/", "./pkg/handler/web/templates/index.html")
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
+		// идентификация через google
+		google := auth.Group("/google")
+		{
+			google.GET("/login", h.oauthGoogleLogin)
+			google.POST("/callback", h.oauthGoogleCallback)
+		}
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)
 	}
