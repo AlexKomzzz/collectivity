@@ -1,7 +1,6 @@
 package handler
 
 import (
-	"context"
 	"crypto/rand"
 	"encoding/base64"
 	"fmt"
@@ -25,9 +24,9 @@ const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_
 var googleOauthConfig = &oauth2.Config{
 	RedirectURL: "http://localhost:8080/auth/google/callback",
 	// ClientID:     viper.GetString("client_ID"), так не записывает!!!!
-	ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
-	Scopes:       []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
-	Endpoint:     google.Endpoint,
+	//ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
+	Scopes:   []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
+	Endpoint: google.Endpoint,
 }
 
 // перенаправление клиента по ссылке на форму предоставление доступа
@@ -36,6 +35,7 @@ func (h *Handler) oauthGoogleLogin(c *gin.Context) {
 	oauthState := generateStateOauthCookie(c)
 
 	googleOauthConfig.ClientID = viper.GetString("GOOGLE_OAUTH_CLIENT_ID")
+	googleOauthConfig.ClientSecret = os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET")
 
 	// AuthCodeURL receive state that is a token to protect the user from CSRF attacks. You must always provide a non-empty string and
 	// validate that it matches the the state query parameter on your redirect callback.
@@ -60,7 +60,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 		return
 	}
 
-	data, err := getUserDataFromGoogle(c.Request.FormValue("code"))
+	data, err := getUserDataFromGoogle(c)
 	if err != nil {
 		logrus.Println(err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, "/")
@@ -72,7 +72,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	// More code .....
 	logrus.Printf("UserInfo: %s\n", data)
 	c.JSON(http.StatusOK, gin.H{
-		"user_data": data,
+		"user_data": string(data),
 	})
 }
 
@@ -88,11 +88,11 @@ func generateStateOauthCookie(c *gin.Context) string {
 }
 
 // запрос к API Google для получение данных о пользователе по access token`у
-func getUserDataFromGoogle(code string) ([]byte, error) {
-	// Use code to get token and get user info from Google.
+func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
 
+	// Use code to get token and get user info from Google.
 	// Exchange преобразует 'code' авторизации в токен.
-	token, err := googleOauthConfig.Exchange(context.Background(), code)
+	token, err := googleOauthConfig.Exchange(c, c.Request.FormValue("code"))
 	if err != nil {
 		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
 	}
