@@ -1,17 +1,9 @@
 package handler
 
 import (
-	"embed"
-	"html/template"
-	"io/fs"
-	"net/http"
-
 	"github.com/AlexKomzzz/collectivity/pkg/service"
 	"github.com/gin-gonic/gin"
 )
-
-//go:embed web/assets/* web/templates/*
-var f embed.FS
 
 type Handler struct {
 	service *service.Service
@@ -29,20 +21,13 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 	mux := gin.New()
 
-	//mux.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerfiles.Handler)) // Для работы сваггера
-
-	// Следующий блок кода отвечает за загрузку шаблонов html и css из директории FS
-	templ := template.Must(template.New("").ParseFS(f, "web/templates/*.html"))
-	fsys, err := fs.Sub(f, "web/assets")
-	if err != nil {
-		return mux, err
-	}
-	mux.StaticFS("/assets", http.FS(fsys))
-	mux.SetHTMLTemplate(templ)
-
+	//mux.LoadHTMLFiles("./web/templates/error.html")
+	mux.LoadHTMLGlob("./web/templates/*.html")
 	mux.NoRoute(Response404) // При неверном URL вызывает ф-ю Response404
 
-	mux.StaticFile("/", "./pkg/handler/web/templates/index.html")
+	mux.StaticFile("/", "./web/templates/index.html")
+	// mux.StaticFile("/", "index.html")
+
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
 		// идентификация через google
@@ -51,13 +36,14 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 			google.GET("/login", h.oauthGoogleLogin)
 			google.GET("/callback", h.oauthGoogleCallback)
 		}
+		yandex := auth.Group("/yandex")
+		{
+			yandex.GET("/login", h.oauthYandexLogin)
+			yandex.GET("/callback", h.oauthYandexCallback)
+		}
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)
 	}
 
-	// api := mux.Group("/api", h.userIdentity) //Группа для взаимодействия с List
-	// {
-
-	// }
 	return mux, nil
 }
