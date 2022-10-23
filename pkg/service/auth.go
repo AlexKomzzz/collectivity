@@ -8,7 +8,7 @@ import (
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
 )
 
-const SOLT = "bt,&13#Rkm54FS#$WR2@#nasf!ds5fre%"
+const SOLT = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
 
 type AuthService struct {
 	repos *repository.Repository

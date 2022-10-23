@@ -30,6 +30,9 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
+		mux.StaticFile("/sign-form/", "./web/templates/forma_auth.html")
+		auth.GET("/sign-up", h.signUp)
+		auth.GET("/sign-in", h.signIn)
 		// идентификация через google
 		google := auth.Group("/google")
 		{
@@ -41,8 +44,6 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 			yandex.GET("/login", h.oauthYandexLogin)
 			yandex.GET("/callback", h.oauthYandexCallback)
 		}
-		auth.POST("/sign-up", h.signUp)
-		auth.POST("/sign-in", h.signIn)
 	}
 
 	return mux, nil

@@ -1,10 +1,12 @@
 package app
 
 type User struct {
-	Id       int    `json:"-"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Id        int    `json:"-"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
 }
 
 type UserGoogle struct {
@@ -16,11 +18,12 @@ type UserGoogle struct {
 }
 
 type UserYandex struct {
-	Id         string `json:"id"`
-	Email      string `json:"email"`
-	Name       string `json:"name"`
-	GivenName  string `json:"given_name"`
-	FamilyName string `json:"family_name"`
+	Id        string `json:"id"`
+	Email     string `json:"default_email"`
+	RealName  string `json:"real_name"` // ФИ
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	// Phone string `json:"number"`
 }
 
 /*type Message struct {

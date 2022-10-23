@@ -22,7 +22,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, gin.H{
 		"id": id,
 	})
 }
