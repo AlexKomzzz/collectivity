@@ -99,7 +99,7 @@ func generateStateOauthCookie(c *gin.Context) string {
 	return state
 }
 
-// запрос к API Google для получение данных о пользователе по access token`у
+// запрос для полученя access token
 func getAccessTokenFromGoogle(c *gin.Context) (string, error) {
 
 	// Use code to get token and get user info from Google.
@@ -114,12 +114,28 @@ func getAccessTokenFromGoogle(c *gin.Context) (string, error) {
 // запрос к API Google для получение данных о пользователе по access token`у
 func getUserDataFromGoogle(c *gin.Context, accessToken string) ([]byte, error) {
 
-	// отправление GET запроса
-	response, err := http.Get(oauthGoogleUrlAPI + accessToken)
-	// лучше использовать curl -H "Authorization: Bearer access_token" https://www.googleapis.com/drive/v2/files
+	// создание GET запроса с заголовком токена доступа для получения данных о пользователе
+	req, err := http.NewRequest("GET", oauthGoogleUrlAPI, http.NoBody)
 	if err != nil {
-		return nil, fmt.Errorf("failed request to API Google: %s", err.Error())
+		return nil, fmt.Errorf("not create GET request: %s", err.Error())
 	}
+
+	req.Header.Set("Authorization", "Bearer "+accessToken)
+	// logrus.Printf("request Head = %s\n", req.Header.Get("Authorization"))
+	// logrus.Printf("request = %v\n", req)
+
+	// отправление GET запроса
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("not create DO request: %s", err.Error())
+	}
+
+	// отправление GET запроса
+	// response, err := http.Get(oauthGoogleUrlAPI + accessToken)
+	// // лучше использовать curl -H "Authorization: Bearer access_token" https://www.googleapis.com/drive/v2/files
+	// if err != nil {
+	// 	return nil, fmt.Errorf("failed request to API Google: %s", err.Error())
+	// }
 	defer response.Body.Close()
 
 	// чтение тела ответа на запрос GET
