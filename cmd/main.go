@@ -20,15 +20,7 @@ func initConfig() error { //Инициализация конфигураций
 	return viper.ReadInConfig()
 }
 
-// func (server *Server) IndexHandler(w http.ResponseWriter, r *http.Request) {
-// 	tmpl, _ := template.ParseFiles("templates/index.html")
-// 	if err := tmpl.Execute(w, nil); err != nil {
-// 		http.Error(w, err.Error(), http.StatusInternalServerError)
-// 	}
-// }
-
-func main() {
-
+func init() {
 	// Инициализируем конфигурации
 	if err := initConfig(); err != nil {
 		logrus.Fatalln("error initializing configs: ", err)
@@ -40,6 +32,9 @@ func main() {
 		logrus.Fatalf("error loading env variables: %s", err.Error())
 		return
 	}
+}
+
+func main() {
 
 	db, err := repository.NewPostgresDB(repository.Config{
 		Host:     viper.GetString("db.host"),
