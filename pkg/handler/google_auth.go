@@ -62,7 +62,14 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 		return
 	}
 
-	data, err := getUserDataFromGoogle(c)
+	token, err := getAccessTokenFromGoogle(c)
+	if err != nil {
+		logrus.Println(err.Error())
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+
+	data, err := getUserDataFromGoogle(c, token)
 	if err != nil {
 		logrus.Println(err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, "/")
@@ -77,7 +84,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	// More code .....
 	logrus.Printf("UserInfo: %s\n", userData)
 	c.JSON(http.StatusOK, gin.H{
-		"user_data": userData,
+		"token": token,
 	})
 }
 
@@ -93,17 +100,22 @@ func generateStateOauthCookie(c *gin.Context) string {
 }
 
 // запрос к API Google для получение данных о пользователе по access token`у
-func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
+func getAccessTokenFromGoogle(c *gin.Context) (string, error) {
 
 	// Use code to get token and get user info from Google.
 	// Exchange преобразует 'code' авторизации в токен.
 	token, err := googleOauthConfig.Exchange(c, c.Request.FormValue("code"))
 	if err != nil {
-		return nil, fmt.Errorf("code exchange wrong: %s", err.Error())
+		return "", fmt.Errorf("code exchange wrong: %s", err.Error())
 	}
+	return token.AccessToken, nil
+}
+
+// запрос к API Google для получение данных о пользователе по access token`у
+func getUserDataFromGoogle(c *gin.Context, accessToken string) ([]byte, error) {
 
 	// отправление GET запроса
-	response, err := http.Get(oauthGoogleUrlAPI + token.AccessToken)
+	response, err := http.Get(oauthGoogleUrlAPI + accessToken)
 	// лучше использовать curl -H "Authorization: Bearer access_token" https://www.googleapis.com/drive/v2/files
 	if err != nil {
 		return nil, fmt.Errorf("failed request to API Google: %s", err.Error())
