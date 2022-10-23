@@ -18,6 +18,12 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 
 	id, err := h.service.CreateUser(input)
 	if err != nil {
+		if err.Error() == "пользователь с указанной электронной почтой уже существует" {
+			c.HTML(http.StatusOK, "ex.html", gin.H{
+				"req": "Alex",
+			})
+			return
+		}
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

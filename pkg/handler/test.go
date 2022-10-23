@@ -1,11 +1,13 @@
 package handler
 
-// import (
-// 	"encoding/json"
-// 	"net/http"
-// 	"net/url"
-// )
+import (
+	"net/http"
 
-// func (h *Handler) test(w http.ResponseWriter, r *http.Request) {
+	"github.com/gin-gonic/gin"
+)
 
-// }
+func (h *Handler) test(c *gin.Context) {
+	c.HTML(http.StatusOK, "ex.html", gin.H{
+		"req": "Alex",
+	})
+}

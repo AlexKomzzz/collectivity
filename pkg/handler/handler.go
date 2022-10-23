@@ -22,11 +22,14 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	mux := gin.New()
 
 	//mux.LoadHTMLFiles("./web/templates/error.html")
-	mux.LoadHTMLGlob("./web/templates/*.html")
+	mux.LoadHTMLGlob("web/templates/*.html")
 	mux.NoRoute(Response404) // При неверном URL вызывает ф-ю Response404
 
+	mux.Static("/assets", "./web/assets")
 	mux.StaticFile("/", "./web/templates/index.html")
 	// mux.StaticFile("/", "index.html")
+
+	mux.GET("/test", h.test)
 
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
