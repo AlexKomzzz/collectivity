@@ -30,12 +30,12 @@ services:
     ports:
       - 5432:5432
     volumes:
-      - chat:/var/lib/postgresql/data
+      - coll_tom:/var/lib/postgresql/data
     environment:
       - POSTGRES_PASSWORD=qwerty
     networks:
       net-server:
-        ipv4_address: 172.16.1.3
+        ipv4_address: 172.16.2.3
   go-api:
     build:
       context: .
@@ -52,7 +52,7 @@ services:
         condition: on-failure
     networks:
       net-server:
-        ipv4_address: 172.16.1.2
+        ipv4_address: 172.16.2.2
   # certbot:
   #   image: certbot/certbot
   #   depends_on:
@@ -68,9 +68,9 @@ networks:
     driver: bridge
     ipam:
       config:
-        - subnet: 172.16.1.0/24
+        - subnet: 172.16.2.0/24
 
 volumes:
-  chat:
+  coll_tom:
 #   www-html:
 #   etc-letsencrypt:

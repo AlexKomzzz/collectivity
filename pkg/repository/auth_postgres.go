@@ -1,8 +1,11 @@
 package repository
 
 import (
+	"errors"
+
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/jmoiron/sqlx"
+	"github.com/sirupsen/logrus"
 )
 
 type AuthPostgres struct {
@@ -19,14 +22,19 @@ func NewAuthPostgres(db *sqlx.DB) *AuthPostgres {
 // необходимо передать структуру User с зашифрованным паролем
 func (r *AuthPostgres) CreateUser(user app.User) (int, error) {
 
-	// query := "INSERT INTO users (username, email, password, chats) VALUES ($1, $2, $3, '{0}') RETURNING id"
-	query := "INSERT INTO users (username, email, password) VALUES ($1, $2, $3) RETURNING id"
+	query := "INSERT INTO users (first_name, last_name, email) VALUES ($1, $2, $3) RETURNING id"
 
-	row := r.db.QueryRow(query, user.Username, user.Email, user.Password)
+	row := r.db.QueryRow(query, user.FirstName, user.LastName, user.Email)
 	var id int
 	err := row.Scan(&id)
 	if err != nil {
-		return 0, err
+		if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
+			logrus.Println("Пользователь с указанной электронной почтой уже существует")
+			return 0, errors.New("пользователь с указанной электронной почтой уже существует")
+		} else {
+			logrus.Printf("error Scan by CreateUser: %s\n", err.Error())
+			return 0, err
+		}
 	}
 
 	return id, nil

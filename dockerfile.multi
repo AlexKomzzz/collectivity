@@ -2,7 +2,7 @@
 
 FROM golang:latest AS build
 
-WORKDIR /server
+WORKDIR /api
 
 COPY go.mod ./
 COPY go.sum ./
@@ -11,7 +11,7 @@ RUN go mod download
 
 COPY ./ ./
 
-RUN CGO_ENABLED=0 go build -o ./srv cmd/server.go
+RUN CGO_ENABLED=0 go build -o ./srv cmd/main.go
 
 
 ## Deploy
@@ -22,7 +22,7 @@ FROM scratch
 
 WORKDIR /
 
-COPY --from=build ./server /
+COPY --from=build ./api /
 
 EXPOSE 8080
 

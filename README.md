@@ -19,3 +19,14 @@
 Сделать:
     - При авторизации через другие сайты, при получении access tokena и данных пользователя проверить его в БД. отправить токен клиенту.
     - сделать страницу для создания клиента, с последующей отправкой введенных данных в API в JSON формате. (JS?)
+
+
+### Миграции в БД
+
+создание файлов миграции
+
+    $ migrate create -ext sql -dir ./schema -seq init
+
+применить файл UP
+
+    $ migrate -path ./schema -database 'postgres://postgres:qwerty@localhost:5432/postgres?sslmode=disable' up (down)

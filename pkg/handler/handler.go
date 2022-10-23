@@ -31,8 +31,8 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
 		mux.StaticFile("/sign-form/", "./web/templates/forma_auth.html")
-		auth.POST("/sign-up", h.signUp)
-		auth.POST("/sign-in", h.signIn)
+		auth.GET("/sign-up", h.signUp)
+		auth.GET("/sign-in", h.signIn)
 		// идентификация через google
 		google := auth.Group("/google")
 		{

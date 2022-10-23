@@ -1,10 +1,12 @@
 package app
 
 type User struct {
-	Id       int    `json:"-"`
-	Username string `json:"username"`
-	Email    string `json:"email"`
-	Password string `json:"password"`
+	Id        int    `json:"-"`
+	Username  string `json:"username"`
+	FirstName string `json:"first_name"`
+	LastName  string `json:"last_name"`
+	Email     string `json:"email"`
+	Password  string `json:"password"`
 }
 
 type UserGoogle struct {
