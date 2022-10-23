@@ -1,5 +1,7 @@
 package handler
 
+// https://oauth.yandex.ru/
+
 // инфа https://yandex.ru/dev/id/doc/dg/oauth/reference/auto-code-client.html#auto-code-client__get-code
 // https://oauth.yandex.ru/client/fe3918e6e2ee4e68b1391c55e117ebc5
 
@@ -194,3 +196,22 @@ func getUserDataFromYandex(c *gin.Context, accessToken string) ([]byte, error) {
 
 	return contents, nil
 }
+
+// запрос для обновления access token
+/*func updateAccessTokenFromGoogle(c *gin.Context) (string, error) {
+	var newToken string
+	/*
+	   Обновить token (https://yandex.ru/dev/id/doc/dg/oauth/reference/refresh-client.html#refresh-client__get-token)
+	   POST /token HTTP/1.1
+	   Host: oauth.yandex.ru
+	   Content-type: application/x-www-form-urlencoded
+	   Content-Length: <длина тела запроса>
+	   [Authorization: Basic <закодированная строка client_id:client_secret>]
+
+	   grant_type=refresh_token
+	    & refresh_token=<refresh_token>
+	   [& client_id=fe3918e6e2ee4e68b1391c55e117ebc5]
+	   [& client_secret=b06823335f3f436d9882b0c9cd0f8a34]
+
+	return newToken, nil
+}*/
