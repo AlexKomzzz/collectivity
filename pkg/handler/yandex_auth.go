@@ -12,6 +12,7 @@ import (
 	"os"
 	"strings"
 
+	app "github.com/AlexKomzzz/collectivity"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
@@ -82,17 +83,21 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 		return
 	}
 
-	userData, err := getUserDataFromYandex(c, token)
+	dataAPIyandex, err := getUserDataFromYandex(c, token)
 	if err != nil {
 		logrus.Println(err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, "/")
 		return
 	}
 
+	var userData = &app.UserYandex{}
+
+	json.Unmarshal(dataAPIyandex, userData)
 	// GetOrCreate User in your db.
-	// Redirect or response with a token.
-	// More code .....
-	logrus.Printf("user data = %s\n", userData)
+
+	logrus.Printf("user data = %s\n", dataAPIyandex)
+	// logrus.Printf("user data = %s\n", userData)
+	// logrus.Printf("name = %s\n", string(userData.RealName))
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 	})
