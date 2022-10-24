@@ -29,14 +29,28 @@ type tokenClaims struct {
 	UserId int `json:"user_id"`
 }
 
+// хэширование пароля
 func generatePasswordHash(password string) string {
 	hash := sha1.New()
 	hash.Write([]byte(password))
 	return fmt.Sprintf("%x", hash.Sum([]byte(SOLT)))
 }
 
-// функция создания Пользователя
-// возвращяем id, если пользователь создан
+// генерация JWT с id пользователя
+func generateJWT(idUser int) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{ // генерация токена
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(tokenTTL).Unix(), // время действия токена
+			IssuedAt:  time.Now().Unix(),               //время создания
+		},
+		idUser,
+	})
+
+	return token.SignedString([]byte(JWT_SECRET))
+}
+
+// функция создания Пользователя в БД
+// возвращяет id
 func (service *AuthService) CreateUser(user app.User) (int, error) {
 	// захешим пароль
 	user.Password = generatePasswordHash(user.Password)
@@ -44,22 +58,33 @@ func (service *AuthService) CreateUser(user app.User) (int, error) {
 	return service.repos.CreateUser(user)
 }
 
+// функция создания Пользователя при авторизации через Google или Яндекс
+func (service *AuthService) CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error) {
+
+	return service.repos.CreateUserAPI(typeAPI, idAPI, firstName, lastName, email)
+}
+
+// генерация JWT по email и паролю
 func (service *AuthService) GenerateJWT(email, password string) (string, error) {
 	// определим id пользователя
-	id, err := service.repos.GetUser(email, generatePasswordHash(password))
+	idUser, err := service.repos.GetUser(email, generatePasswordHash(password))
 	if err != nil {
 		return "", err
 	}
 
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{ // генерация токена
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(tokenTTL).Unix(), // время действия токена
-			IssuedAt:  time.Now().Unix(),               //время создания
-		},
-		id,
-	})
+	return generateJWT(idUser)
+}
 
-	return token.SignedString([]byte(JWT_SECRET))
+// генерация JWT при Google или Яндекс авторизации
+// в переменную typeAPI необходимо передать 'google' либо 'yandex'
+func (service *AuthService) GenerateJWT_API(idUser int) (string, error) {
+	// определим id пользователя
+	// idUser, err := service.repos.GetUserAPI(typeAPI, idAPI, email)
+	// if err != nil {
+	// 	return "", err
+	// }
+
+	return generateJWT(idUser)
 }
 
 /*

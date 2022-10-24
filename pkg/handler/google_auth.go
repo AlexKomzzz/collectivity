@@ -62,14 +62,14 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 		return
 	}
 
-	token, err := getAccessTokenFromGoogle(c)
-	if err != nil {
-		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/")
-		return
-	}
+	// token, err := getAccessTokenFromGoogle(c)
+	// if err != nil {
+	// 	logrus.Println(err.Error())
+	// 	c.Redirect(http.StatusTemporaryRedirect, "/")
+	// 	return
+	// }
 
-	data, err := getUserDataFromGoogle(c, token)
+	data, err := getUserDataFromGoogle(c)
 	if err != nil {
 		logrus.Println(err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, "/")
@@ -79,10 +79,28 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	var userData = &app.UserGoogle{}
 
 	json.Unmarshal(data, userData)
-	// GetOrCreate User in your db.
-	// Redirect or response with a token.
-	// More code .....
-	logrus.Printf("UserInfo: %s\n", userData)
+
+	// создание пользователя в БД (или обновление, если уже создан)
+	idUser, err := h.service.CreateUserAPI("google", userData.Id, userData.FirstName, userData.LastName, userData.Email)
+	if err != nil {
+		logrus.Println(err.Error())
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+
+	// получение JWT по id пользователя
+	token, err := h.service.GenerateJWT_API(idUser)
+	if err != nil {
+		logrus.Println(err.Error())
+		// c.HTML(error.html)
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+
+	logrus.Printf("UserInfoGoogle: %s\n", userData)
+	logrus.Printf("JWT: %s\n", token)
+
+	// передача JWT токена пользователю
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 	})
@@ -112,7 +130,13 @@ func getAccessTokenFromGoogle(c *gin.Context) (string, error) {
 }
 
 // запрос к API Google для получение данных о пользователе по access token`у
-func getUserDataFromGoogle(c *gin.Context, accessToken string) ([]byte, error) {
+func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
+
+	// получение токена
+	accessToken, err := getAccessTokenFromGoogle(c)
+	if err != nil {
+		return nil, err
+	}
 
 	// создание GET запроса с заголовком токена доступа для получения данных о пользователе
 	req, err := http.NewRequest("GET", oauthGoogleUrlAPI, http.NoBody)
