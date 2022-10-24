@@ -1,8 +1,6 @@
 package repository
 
 import (
-	"errors"
-
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/jmoiron/sqlx"
 	"github.com/sirupsen/logrus"
@@ -22,27 +20,21 @@ func NewAuthPostgres(db *sqlx.DB) *AuthPostgres {
 // необходимо передать структуру User с зашифрованным паролем
 func (r *AuthPostgres) CreateUser(user app.User) (int, error) {
 
-	query := "INSERT INTO users (first_name, last_name, email) VALUES ($1, $2, $3) RETURNING id"
+	query := "INSERT INTO users (first_name, last_name, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET first_name = EXCLUDED.first_name, last_name=EXCLUDED.last_name, password_hash=EXCLUDED.password_hash RETURNING id"
 
 	row := r.db.QueryRow(query, user.FirstName, user.LastName, user.Email)
 	var id int
 	err := row.Scan(&id)
 	if err != nil {
-		if err.Error() == "pq: duplicate key value violates unique constraint \"users_email_key\"" {
-			logrus.Println("Пользователь с указанной электронной почтой уже существует")
-			return 0, errors.New("пользователь с указанной электронной почтой уже существует")
-		} else {
-			logrus.Printf("error Scan by CreateUser: %s\n", err.Error())
-			return 0, err
-		}
+		logrus.Printf("error Scan by CreateUser: %s\n", err.Error())
+		return 0, err
 	}
 
 	return id, nil
 }
 
-/*
 // определение id пользователя по email и паролю
-func (r *Repository) GetUser(email, password string) (int, error) {
+func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 	query := "SELECT id FROM users WHERE email=$1 AND password=$2"
 	var id int
 	err := r.db.Get(&id, query, email, password)
@@ -53,6 +45,7 @@ func (r *Repository) GetUser(email, password string) (int, error) {
 	return id, nil
 }
 
+/*
 // определение idпользователя по email
 func (r *Repository) GetUserByEmail(email string) (int, error) {
 	query := "SELECT id FROM users WHERE email=$1"

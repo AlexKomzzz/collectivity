@@ -8,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
+// Создание нового пользователя, добавление в БД и выдача токена авторизации
 func (h *Handler) signUp(c *gin.Context) { // Обработчик для регистрации
 	var input app.User
 
@@ -18,26 +19,28 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 
 	id, err := h.service.CreateUser(input)
 	if err != nil {
-		if err.Error() == "пользователь с указанной электронной почтой уже существует" {
-			c.HTML(http.StatusOK, "ex.html", gin.H{
-				"req": "Alex",
-			})
-			return
-		}
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	token, err := h.service.GenerateJWT(input.Email, input.Password)
+	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id": id,
+		"id":    id,
+		"token": token,
 	})
 }
 
 type signInInput struct { // Структура для идентификации
-	Username string `json:"username" binding:"required"`
+	Email    string `json:"email" binding:"required"`
 	Password string `json:"password" binding:"required"`
 }
 
+// авторизация пользователя, выдача JWT
 func (h *Handler) signIn(c *gin.Context) { // Обработчик для аутентификации и получения токена
 	var input signInInput
 
@@ -46,13 +49,13 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 		return
 	}
 
-	// token, err := h.service.GenerateJWT(input.Username, input.Password)
-	// if err != nil {
-	// 	newErrorResponse(c, http.StatusInternalServerError, err.Error())
-	// 	return
-	// }
+	token, err := h.service.GenerateJWT(input.Email, input.Password)
+	if err != nil {
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 
 	c.JSON(http.StatusOK, map[string]interface{}{
-		"token": "token",
+		"token": token,
 	})
 }

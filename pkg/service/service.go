@@ -7,6 +7,7 @@ import (
 
 type Authorization interface {
 	CreateUser(user app.User) (int, error)
+	GenerateJWT(email, password string) (string, error)
 }
 
 type Service struct {

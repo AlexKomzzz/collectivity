@@ -78,14 +78,14 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 		return
 	}
 
-	token, err := getAccessTokenFromYandex(c)
-	if err != nil {
-		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/")
-		return
-	}
+	// token, err := getAccessTokenFromYandex(c)
+	// if err != nil {
+	// 	logrus.Println(err.Error())
+	// 	c.Redirect(http.StatusTemporaryRedirect, "/")
+	// 	return
+	// }
 
-	dataAPIyandex, err := getUserDataFromYandex(c, token)
+	dataAPIyandex, err := getUserDataFromYandex(c)
 	if err != nil {
 		logrus.Println(err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, "/")
@@ -101,7 +101,7 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	// logrus.Printf("user data = %s\n", userData)
 	// logrus.Printf("name = %s\n", string(userData.RealName))
 	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+		"auth": "ok",
 	})
 }
 
@@ -158,19 +158,25 @@ func getAccessTokenFromYandex(c *gin.Context) (string, error) {
 	var responceAccessToken = &responceYandex{}
 	json.Unmarshal(contents, responceAccessToken)
 
+	logrus.Println(responceAccessToken)
 	// написать продление токена, если нужно
 
 	return responceAccessToken.AccessToken, nil
 }
 
 // запрос к API Google для получение данных о пользователе по access token`у
-func getUserDataFromYandex(c *gin.Context, accessToken string) ([]byte, error) {
+func getUserDataFromYandex(c *gin.Context) ([]byte, error) {
 
 	// получение access token при помощи кода подтверждения
 	// accessToken, err := getAccessTokenFromYandex(c)
 	// if err != nil {
 	// 	return nil, fmt.Errorf("not received access token: %s", err.Error())
 	// }
+
+	accessToken, err := getAccessTokenFromYandex(c)
+	if err != nil {
+		return nil, err
+	}
 
 	// создание GET запроса с заголовком токена доступа для получения данных о пользователе
 	req, err := http.NewRequest("GET", oauthYandexUrlAPI, http.NoBody)

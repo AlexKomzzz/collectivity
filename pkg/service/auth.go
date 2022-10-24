@@ -3,9 +3,11 @@ package service
 import (
 	"crypto/sha1"
 	"fmt"
+	"time"
 
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
+	"github.com/dgrijalva/jwt-go"
 )
 
 const SOLT = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
@@ -18,16 +20,14 @@ func NewAuthService(repos *repository.Repository) *AuthService {
 	return &AuthService{repos: repos}
 }
 
-/*const tokenTTL = 300 * time.Hour
+const tokenTTL = 300 * time.Hour
 
 const JWT_SECRET = "rkjk#4#%35FSFJlja#4353KSFjH"
-
 
 type tokenClaims struct {
 	jwt.StandardClaims
 	UserId int `json:"user_id"`
 }
-*/
 
 func generatePasswordHash(password string) string {
 	hash := sha1.New()
@@ -44,8 +44,7 @@ func (service *AuthService) CreateUser(user app.User) (int, error) {
 	return service.repos.CreateUser(user)
 }
 
-/*
-func (service *Service) GenerateJWT(email, password string) (string, error) {
+func (service *AuthService) GenerateJWT(email, password string) (string, error) {
 	// определим id пользователя
 	id, err := service.repos.GetUser(email, generatePasswordHash(password))
 	if err != nil {
@@ -63,6 +62,7 @@ func (service *Service) GenerateJWT(email, password string) (string, error) {
 	return token.SignedString([]byte(JWT_SECRET))
 }
 
+/*
 // Парс токена (получаем из токена id)
 func (service *Service) ParseToken(accesstoken string) (int, error) {
 	token, err := jwt.ParseWithClaims(accesstoken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
