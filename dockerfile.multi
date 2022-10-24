@@ -24,6 +24,9 @@ WORKDIR /
 
 COPY --from=build ./api /
 
+# https://preslav.me/2019/08/11/x509-certificate-signed-by-unknown-authority-running-a-go-app-inside-a-docker-container/
+COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/  
+
 EXPOSE 8080
 
 # CMD ["/server"]

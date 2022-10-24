@@ -62,7 +62,9 @@ func (h *Handler) oauthYandexLogin(c *gin.Context) {
 }
 
 // получение данных о пользователе от Яндекс.OAuth
-// Когда пользователь разрешает доступ к своим данным, Яндекс.OAuth перенаправляет его в приложение. Код подтверждения включается в URL перенаправления.
+// Когда пользователь разрешает доступ к своим данным, Яндекс.OAuth перенаправляет его в приложение.
+// Код подтверждения включается в URL перенаправления.
+// генерация JWT и выдача пользователю
 func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	// Сравним cookie
 	oauthState, err := c.Cookie("oauthstate")
@@ -114,7 +116,7 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 		return
 	}
 
-	logrus.Printf("UserInfoGoogle: %s\n", userData)
+	logrus.Printf("UserInfoYandex: %s\n", userData)
 	logrus.Printf("JWT: %s\n", token)
 
 	// передача JWT токена пользователю
@@ -176,7 +178,7 @@ func getAccessTokenFromYandex(c *gin.Context) (string, error) {
 	var responceAccessToken = &responceYandex{}
 	json.Unmarshal(contents, responceAccessToken)
 
-	logrus.Println(responceAccessToken)
+	// logrus.Println(responceAccessToken)
 	// написать продление токена, если нужно
 
 	return responceAccessToken.AccessToken, nil
