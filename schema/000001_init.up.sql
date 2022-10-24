@@ -1,12 +1,14 @@
 CREATE TABLE users
 (
     id              serial          not null unique  primary key,
-    first_name      varchar(255)    not null        , -- имя
-    last_name       varchar(255)    not null        , -- фамилия
-    patronymic      varchar(255)                    , -- отчество
-    password_hash   varchar(255)                    ,
-    email           varchar(255)    not null unique ,
-    role            varchar(255)                      -- роль (напр. Админ)
+    id_google       varchar(255)    unique                      ,
+    id_yandex       varchar(255)    unique                      ,
+    first_name      varchar(255)    not null                    , -- имя
+    last_name       varchar(255)    not null                    , -- фамилия
+    patronymic      varchar(255)                                , -- отчество
+    password_hash   varchar(255)                                ,
+    email           varchar(255)    not null unique             ,
+    role            varchar(255)                                  -- роль (напр. Админ)
 );
 
 -- CREATE TABLE todo_lists

@@ -62,7 +62,9 @@ func (h *Handler) oauthYandexLogin(c *gin.Context) {
 }
 
 // получение данных о пользователе от Яндекс.OAuth
-// Когда пользователь разрешает доступ к своим данным, Яндекс.OAuth перенаправляет его в приложение. Код подтверждения включается в URL перенаправления.
+// Когда пользователь разрешает доступ к своим данным, Яндекс.OAuth перенаправляет его в приложение.
+// Код подтверждения включается в URL перенаправления.
+// генерация JWT и выдача пользователю
 func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	// Сравним cookie
 	oauthState, err := c.Cookie("oauthstate")
@@ -78,14 +80,15 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 		return
 	}
 
-	token, err := getAccessTokenFromYandex(c)
-	if err != nil {
-		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/")
-		return
-	}
+	// token, err := getAccessTokenFromYandex(c)
+	// if err != nil {
+	// 	logrus.Println(err.Error())
+	// 	c.Redirect(http.StatusTemporaryRedirect, "/")
+	// 	return
+	// }
 
-	dataAPIyandex, err := getUserDataFromYandex(c, token)
+	// получение данных пользователя от API Яндекс ID
+	dataAPIyandex, err := getUserDataFromYandex(c)
 	if err != nil {
 		logrus.Println(err.Error())
 		c.Redirect(http.StatusTemporaryRedirect, "/")
@@ -95,11 +98,28 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	var userData = &app.UserYandex{}
 
 	json.Unmarshal(dataAPIyandex, userData)
-	// GetOrCreate User in your db.
 
-	logrus.Printf("user data = %s\n", dataAPIyandex)
-	// logrus.Printf("user data = %s\n", userData)
-	// logrus.Printf("name = %s\n", string(userData.RealName))
+	// создание пользователя в БД (или обновление, если уже создан)
+	idUser, err := h.service.CreateUserAPI("yandex", userData.Id, userData.FirstName, userData.LastName, userData.Email)
+	if err != nil {
+		logrus.Println(err.Error())
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+
+	// получение JWT по id пользователя
+	token, err := h.service.GenerateJWT_API(idUser)
+	if err != nil {
+		logrus.Println(err.Error())
+		// c.HTML(error.html)
+		c.Redirect(http.StatusTemporaryRedirect, "/")
+		return
+	}
+
+	logrus.Printf("UserInfoYandex: %s\n", userData)
+	logrus.Printf("JWT: %s\n", token)
+
+	// передача JWT токена пользователю
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 	})
@@ -158,19 +178,25 @@ func getAccessTokenFromYandex(c *gin.Context) (string, error) {
 	var responceAccessToken = &responceYandex{}
 	json.Unmarshal(contents, responceAccessToken)
 
+	// logrus.Println(responceAccessToken)
 	// написать продление токена, если нужно
 
 	return responceAccessToken.AccessToken, nil
 }
 
 // запрос к API Google для получение данных о пользователе по access token`у
-func getUserDataFromYandex(c *gin.Context, accessToken string) ([]byte, error) {
+func getUserDataFromYandex(c *gin.Context) ([]byte, error) {
 
 	// получение access token при помощи кода подтверждения
 	// accessToken, err := getAccessTokenFromYandex(c)
 	// if err != nil {
 	// 	return nil, fmt.Errorf("not received access token: %s", err.Error())
 	// }
+
+	accessToken, err := getAccessTokenFromYandex(c)
+	if err != nil {
+		return nil, err
+	}
 
 	// создание GET запроса с заголовком токена доступа для получения данных о пользователе
 	req, err := http.NewRequest("GET", oauthYandexUrlAPI, http.NoBody)
