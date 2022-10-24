@@ -29,13 +29,22 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	mux.StaticFile("/", "./web/templates/index.html")
 	// mux.StaticFile("/", "index.html")
 
-	mux.GET("/test", h.test)
+	mux.POST("/test", h.test)
+
+	api := mux.Group("/api", h.userIdentity)
+	{
+		api.StaticFile("/", "./web/templates/start_list.html")
+	}
+
+	// сброс пароля
+	mux.GET("/refresh-pass", h.test)
 
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
+		// отправка формы для создания пользователя
 		mux.StaticFile("/sign-form/", "./web/templates/forma_auth.html")
-		auth.GET("/sign-up", h.signUp)
-		auth.GET("/sign-in", h.signIn)
+		auth.POST("/sign-up", h.signUp)
+		auth.POST("/sign-in", h.signIn)
 		// идентификация через google
 		google := auth.Group("/google")
 		{

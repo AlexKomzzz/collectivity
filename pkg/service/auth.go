@@ -2,6 +2,7 @@ package service
 
 import (
 	"crypto/sha1"
+	"errors"
 	"fmt"
 	"time"
 
@@ -87,9 +88,8 @@ func (service *AuthService) GenerateJWT_API(idUser int) (string, error) {
 	return generateJWT(idUser)
 }
 
-/*
 // Парс токена (получаем из токена id)
-func (service *Service) ParseToken(accesstoken string) (int, error) {
+func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 	token, err := jwt.ParseWithClaims(accesstoken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
 			return nil, errors.New("invalid signing method")
@@ -108,8 +108,9 @@ func (service *Service) ParseToken(accesstoken string) (int, error) {
 	return claims.UserId, nil
 }
 
+/*
 // функция получения username по id
-func (service *Service) GetUsername(userId int) (string, error) {
+func (service *AuthService) GetUsername(userId int) (string, error) {
 	return service.repos.GetUsername(userId)
 }
 */

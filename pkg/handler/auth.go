@@ -42,6 +42,10 @@ type signInInput struct { // Структура для идентификаци�
 
 // авторизация пользователя, выдача JWT
 func (h *Handler) signIn(c *gin.Context) { // Обработчик для аутентификации и получения токена
+
+	// ContentType = text/plain
+	// body, _ := ioutil.ReadAll(c.Request.Body)
+
 	var input signInInput
 
 	if err := c.BindJSON(&input); err != nil {
@@ -55,7 +59,7 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 		return
 	}
 
-	c.JSON(http.StatusOK, map[string]interface{}{
+	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 	})
 }
