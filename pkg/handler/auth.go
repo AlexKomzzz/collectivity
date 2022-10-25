@@ -14,6 +14,7 @@ import (
 func (h *Handler) signUp(c *gin.Context) { // Обработчик для регистрации
 
 	var dataUser app.User
+	var passRepeat string
 
 	// ContentType = text/plain
 	// выделим тело запроса
@@ -55,25 +56,51 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 		} else if paramsSl[0] == "psw" {
 			dataUser.Password = paramsSl[1]
 			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "psw-repeat" {
+			passRepeat = paramsSl[1]
+			// log.Println(paramsSl[1])
 		}
 	}
 
-	id, err := h.service.CreateUser(&dataUser)
+	//logrus.Printf("dataUser: %v", dataUser)
+
+	idUser, err := h.service.CreateUser(&dataUser, passRepeat)
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		if err.Error() == "пароли не совпадают" {
+			c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
+				"error": err,
+			})
+			// c.Redirect(http.StatusTemporaryRedirect, "/auth/sign-form?error=пароли%20не%20совпадают")
+			// c.Redirect(http.StatusTemporaryRedirect, "/test")
+
+		} else {
+			newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		}
 		return
 	}
 
-	token, err := h.service.GenerateJWT(dataUser.Email, dataUser.Password)
+	token, err := h.service.GenerateJWT_API(idUser)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":    id,
+		"id":    idUser,
 		"token": token,
 	})
+}
+
+// отправление формы для создания нового пользователя
+func (h *Handler) formAuth(c *gin.Context) {
+	// вытаскиваем с URL ошибку
+	errorString := c.Query("error")
+
+	// передаем форму для создание акк
+	c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
+		"error": errorString,
+	})
+
 }
 
 // type signInInput struct { // Структура для идентификации
@@ -117,9 +144,15 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 
 	token, err := h.service.GenerateJWT(dataUser.Email, dataUser.Password)
 	if err != nil {
-		c.HTML(http.StatusBadRequest, "login.html", gin.H{
-			"error": "Такого пользователя не существует",
-		})
+		if err.Error() == "sql: no rows in result set" {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Такого пользователя не существует.\nПроверьте правильность введенных данных или зарегистрируйтесь",
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": err,
+			})
+		}
 		//newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}

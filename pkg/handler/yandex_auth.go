@@ -76,7 +76,7 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	// сравним поле state  для защиты от CSRF-атак
 	if c.Request.FormValue("state") != oauthState {
 		logrus.Println("invalid oauth yandex state")
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
 		return
 	}
 
@@ -91,7 +91,7 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	dataAPIyandex, err := getUserDataFromYandex(c)
 	if err != nil {
 		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
 		return
 	}
 
@@ -103,7 +103,7 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	idUser, err := h.service.CreateUserAPI("yandex", userData.Id, userData.FirstName, userData.LastName, userData.Email)
 	if err != nil {
 		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
 		return
 	}
 
@@ -112,7 +112,7 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	if err != nil {
 		logrus.Println(err.Error())
 		// c.HTML(error.html)
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
 		return
 	}
 
