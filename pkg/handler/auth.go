@@ -1,8 +1,10 @@
 package handler
 
 import (
-	"fmt"
+	"bytes"
+	"io/ioutil"
 	"net/http"
+	"strings"
 
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/gin-gonic/gin"
@@ -10,52 +12,148 @@ import (
 
 // Создание нового пользователя, добавление в БД и выдача токена авторизации
 func (h *Handler) signUp(c *gin.Context) { // Обработчик для регистрации
-	var input app.User
 
-	if err := c.BindJSON(&input); err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "invalid input body") //fmt.Sprintf("invalid input body: %s", err.Error()))
-		return
-	}
+	var dataUser app.User
+	var passRepeat string
 
-	id, err := h.service.CreateUser(input)
+	// ContentType = text/plain
+	// выделим тело запроса
+	/* структура тела запроса {
+		first-name=<first-name>
+		last-name=<last-name>
+		middle-name=<middle-name> OR nil !!!!
+		email=<your_email>
+		psw=<password>
+		btn_login=
+	}*/
+	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	token, err := h.service.GenerateJWT(input.Email, input.Password)
+	// выделим данные из body и запишем в структуру User
+	// разделим поля данных в запросе
+	res := bytes.Split(body, []byte{13, 10})
+	for _, params := range res {
+		// делим строки по знаку равенства
+		paramsSl := strings.Split(string(params), "=")
+
+		if paramsSl[0] == "first-name" {
+			dataUser.FirstName = paramsSl[1]
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "last-name" {
+			dataUser.LastName = paramsSl[1]
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "middle-name" {
+			if len(paramsSl) > 1 {
+				dataUser.MiddleName = paramsSl[1]
+			}
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "email" {
+			dataUser.Email = paramsSl[1]
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "psw" {
+			dataUser.Password = paramsSl[1]
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "psw-repeat" {
+			passRepeat = paramsSl[1]
+			// log.Println(paramsSl[1])
+		}
+	}
+
+	//logrus.Printf("dataUser: %v", dataUser)
+
+	idUser, err := h.service.CreateUser(&dataUser, passRepeat)
+	if err != nil {
+		if err.Error() == "пароли не совпадают" {
+			c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
+				"error": err,
+			})
+			// c.Redirect(http.StatusTemporaryRedirect, "/auth/sign-form?error=пароли%20не%20совпадают")
+			// c.Redirect(http.StatusTemporaryRedirect, "/test")
+
+		} else {
+			newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		}
+		return
+	}
+
+	token, err := h.service.GenerateJWT_API(idUser)
 	if err != nil {
 		newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	c.JSON(http.StatusOK, gin.H{
-		"id":    id,
+		"id":    idUser,
 		"token": token,
 	})
 }
 
-type signInInput struct { // Структура для идентификации
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
+// отправление формы для создания нового пользователя
+func (h *Handler) formAuth(c *gin.Context) {
+	// вытаскиваем с URL ошибку
+	errorString := c.Query("error")
+
+	// передаем форму для создание акк
+	c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
+		"error": errorString,
+	})
+
 }
+
+// type signInInput struct { // Структура для идентификации
+// 	Email    string `json:"email" binding:"required"`
+// 	Password string `json:"password" binding:"required"`
+// }
 
 // авторизация пользователя, выдача JWT
 func (h *Handler) signIn(c *gin.Context) { // Обработчик для аутентификации и получения токена
 
+	var dataUser app.User
+
 	// ContentType = text/plain
-	// body, _ := ioutil.ReadAll(c.Request.Body)
-
-	var input signInInput
-
-	if err := c.BindJSON(&input); err != nil {
-		newErrorResponse(c, http.StatusBadRequest, fmt.Sprintf("invalid input body: %s", err.Error()))
+	// выделим тело запроса
+	/* структура тела запроса {
+		email=<your_email>
+		password=<your_pass>
+		btn_login=
+	}*/
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	token, err := h.service.GenerateJWT(input.Email, input.Password)
+	// выделим email и password из body
+	// разделим поля данных в запросе
+	res := bytes.Split(body, []byte{13, 10})
+	for _, params := range res {
+		// делим строки по знаку равенства
+		paramsSl := strings.Split(string(params), "=")
+
+		if paramsSl[0] == "email" {
+			dataUser.Email = paramsSl[1]
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "password" {
+			dataUser.Password = paramsSl[1]
+			// log.Println(paramsSl[1])
+		}
+	}
+
+	token, err := h.service.GenerateJWT(dataUser.Email, dataUser.Password)
 	if err != nil {
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		if err.Error() == "sql: no rows in result set" {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Такого пользователя не существует.\nПроверьте правильность введенных данных или зарегистрируйтесь",
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": err,
+			})
+		}
+		//newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		return
 	}
 

@@ -1,6 +1,8 @@
 package handler
 
 import (
+	"net/http"
+
 	"github.com/AlexKomzzz/collectivity/pkg/service"
 	"github.com/gin-gonic/gin"
 )
@@ -26,25 +28,34 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	mux.NoRoute(Response404) // При неверном URL вызывает ф-ю Response404
 
 	mux.Static("/assets", "./web/assets")
-	mux.StaticFile("/", "./web/templates/index.html")
 	// mux.StaticFile("/", "index.html")
 
-	mux.POST("/test", h.test)
+	mux.GET("/test", h.test)
 
-	api := mux.Group("/api", h.userIdentity)
+	// основная страница сайта
+	api := mux.Group("/", h.userIdentity)
 	{
 		api.StaticFile("/", "./web/templates/start_list.html")
 	}
 
-	// сброс пароля
-	mux.GET("/refresh-pass", h.test)
-
+	// авторизация и аутентификация
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
+		// Войти в систему
+		// auth.StaticFile("/login-form", "./web/templates/login.html")
+		auth.GET("/login", func(c *gin.Context) {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+		})
+
 		// отправка формы для создания пользователя
-		mux.StaticFile("/sign-form/", "./web/templates/forma_auth.html")
+		// auth.StaticFile("/sign-form", "./web/templates/forma_auth.html")
+		auth.GET("/sign-form", h.formAuth)
+
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)
+		// сброс пароля
+		auth.GET("/refresh-pass", h.test)
+
 		// идентификация через google
 		google := auth.Group("/google")
 		{

@@ -20,11 +20,11 @@ func NewAuthPostgres(db *sqlx.DB) *AuthPostgres {
 
 // созданиепользователя в БД
 // необходимо передать структуру User с зашифрованным паролем
-func (r *AuthPostgres) CreateUser(user app.User) (int, error) {
+func (r *AuthPostgres) CreateUser(user *app.User) (int, error) {
 
-	query := "INSERT INTO users (first_name, last_name, password_hash, email) VALUES ($1, $2, $3, $4) ON CONFLICT (email) DO UPDATE SET first_name = EXCLUDED.first_name, last_name=EXCLUDED.last_name, password_hash=EXCLUDED.password_hash RETURNING id"
+	query := "INSERT INTO users (first_name, last_name, middle_name, password_hash, email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET first_name = EXCLUDED.first_name, last_name=EXCLUDED.last_name, middle_name=EXCLUDED.middle_name, password_hash=EXCLUDED.password_hash RETURNING id"
 
-	row := r.db.QueryRow(query, user.FirstName, user.LastName, user.Password, user.Email)
+	row := r.db.QueryRow(query, user.FirstName, user.LastName, user.MiddleName, user.Password, user.Email)
 	var id int
 	err := row.Scan(&id)
 	if err != nil {

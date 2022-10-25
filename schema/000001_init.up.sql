@@ -5,7 +5,7 @@ CREATE TABLE users
     id_yandex       varchar(255)    unique                      ,
     first_name      varchar(255)    not null                    , -- имя
     last_name       varchar(255)    not null                    , -- фамилия
-    patronymic      varchar(255)                                , -- отчество
+    middle_name     varchar(255)                                , -- отчество
     password_hash   varchar(255)                                ,
     email           varchar(255)    not null unique             ,
     role            varchar(255)                                  -- роль (напр. Админ)

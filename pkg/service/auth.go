@@ -52,9 +52,15 @@ func generateJWT(idUser int) (string, error) {
 
 // функция создания Пользователя в БД
 // возвращяет id
-func (service *AuthService) CreateUser(user app.User) (int, error) {
-	// захешим пароль
+func (service *AuthService) CreateUser(user *app.User, passRepeat string) (int, error) {
+	// захешим пароли
 	user.Password = generatePasswordHash(user.Password)
+	passRepeat = generatePasswordHash(passRepeat)
+
+	// Сравним переданные пароли
+	if user.Password != passRepeat {
+		return 0, errors.New("пароли не совпадают")
+	}
 
 	return service.repos.CreateUser(user)
 }
