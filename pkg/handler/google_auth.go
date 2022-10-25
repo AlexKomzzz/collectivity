@@ -58,7 +58,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 
 	if c.Request.FormValue("state") != oauthState {
 		logrus.Println("invalid oauth google state")
-		c.Redirect(http.StatusTemporaryRedirect, "/")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
 		return
 	}
 
@@ -72,7 +72,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	data, err := getUserDataFromGoogle(c)
 	if err != nil {
 		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
 		return
 	}
 
@@ -84,7 +84,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	idUser, err := h.service.CreateUserAPI("google", userData.Id, userData.FirstName, userData.LastName, userData.Email)
 	if err != nil {
 		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
 		return
 	}
 
@@ -93,7 +93,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	if err != nil {
 		logrus.Println(err.Error())
 		// c.HTML(error.html)
-		c.Redirect(http.StatusTemporaryRedirect, "/")
+		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
 		return
 	}
 
