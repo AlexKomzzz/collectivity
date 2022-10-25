@@ -48,10 +48,10 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		})
 
 		// отправка формы для создания пользователя
-		//auth.StaticFile("/sign-form/", "./web/templates/forma_auth.html")
-		auth.GET("/sign-form", func(c *gin.Context) {
-			c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{})
-		})
+		auth.StaticFile("/sign-form/", "./web/templates/forma_auth.html")
+		// auth.GET("/sign-form", func(c *gin.Context) {
+		// 	c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{})
+		// })
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)
 		// сброс пароля

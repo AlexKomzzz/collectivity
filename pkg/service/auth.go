@@ -52,7 +52,7 @@ func generateJWT(idUser int) (string, error) {
 
 // функция создания Пользователя в БД
 // возвращяет id
-func (service *AuthService) CreateUser(user app.User) (int, error) {
+func (service *AuthService) CreateUser(user *app.User) (int, error) {
 	// захешим пароль
 	user.Password = generatePasswordHash(user.Password)
 

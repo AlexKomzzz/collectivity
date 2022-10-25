@@ -41,7 +41,7 @@ hr {
 
 /* Set a style for the submit button */
 .registerbtn {
-    background-color: #4CAF50;
+    background-color: #3f51b5;
     color: white;
     padding: 16px 20px;
     margin: 8px 0;
@@ -49,6 +49,8 @@ hr {
     cursor: pointer;
     width: 100%;
     opacity: 0.9;
+    letter-spacing: .5px;
+    text-transform: uppercase;
 }
 
 .registerbtn:hover {
@@ -110,7 +112,7 @@ a {
 </head>
 <body>
 
-<form action="/auth/sign-up">
+<form action="/auth/sign-up" method="post" enctype="text/plain">
   <div class="container">
     <h1>Регистрация</h1>
     <p>Пожалуйста, заполните эту форму, чтобы создать учетную запись.</p>
@@ -133,10 +135,10 @@ a {
     
     <div id="message">
   <h3 class="titlemes">Пароль должен содержать следующее:</h3>
-  <p id="letter" class="invalid">A <b>lowercase</b> letter</p>
-  <p id="capital" class="invalid">A <b>capital (uppercase)</b> letter</p>
-  <p id="number" class="invalid">A <b>number</b></p>
-  <p id="length" class="invalid">Minimum <b>8 characters</b></p>
+  <p id="letter" class="invalid"> <b>строчную</b> букву</p>
+  <p id="capital" class="invalid"> <b>прописную(заглавную)</b> букву</p>
+  <p id="number" class="invalid"> <b>цифру</b></p>
+  <p id="length" class="invalid">минимум <b>8 знаков</b></p>
 </div>  
 
     <label for="psw-repeat"><b>Повторите пароль*</b></label>
@@ -148,7 +150,7 @@ a {
   </div>
   
   <div class="container signin">
-    <p>У вас уже есть аккаунт? <a href="#">Войти с помощью почты и пароля</a>.</p>
+    <p>У вас уже есть аккаунт? <a href="/auth/login-form">Войти с помощью почты и пароля</a>.</p>
   </div>
   
   
