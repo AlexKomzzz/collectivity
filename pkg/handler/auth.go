@@ -2,12 +2,15 @@ package handler
 
 import (
 	"bytes"
+	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"strings"
 
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/viper"
 )
 
 // Создание нового пользователя, добавление в БД и выдача токена авторизации
@@ -91,6 +94,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 	})
 }
 
+/*
 // отправление формы для создания нового пользователя
 func (h *Handler) formAuth(c *gin.Context) {
 	// вытаскиваем с URL ошибку
@@ -101,7 +105,7 @@ func (h *Handler) formAuth(c *gin.Context) {
 		"error": errorString,
 	})
 
-}
+}*/
 
 // type signInInput struct { // Структура для идентификации
 // 	Email    string `json:"email" binding:"required"`
@@ -160,4 +164,82 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 	c.JSON(http.StatusOK, gin.H{
 		"token": token,
 	})
+}
+
+// определение пользователя по email
+func (h *Handler) definitionUser(c *gin.Context) {
+
+	var email string
+
+	// ContentType = text/plain
+	// выделим тело запроса
+	/* структура тела запроса {
+		email=<your_email>
+		btn_login=
+	}*/
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	// выделим email из body
+	// разделим поля данных в запросе
+	res := bytes.Split(body, []byte{13, 10})
+	for _, params := range res {
+		// делим строки по знаку равенства
+		paramsSl := strings.Split(string(params), "=")
+
+		if paramsSl[0] == "email" {
+			email = paramsSl[1]
+			// log.Println(paramsSl[1])
+		}
+	}
+
+	// идентифицируем пользователя по email
+	token, err := h.service.DefinitionUserByEmail(email)
+	if err.Error() == "sql: no rows in result set" {
+		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+			"error": "Пользователя с такой почтой не существует.",
+		})
+		return
+	} else {
+		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+			"error": err,
+		})
+		return
+	}
+
+	// формирование URL
+	URL := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s", viper.GetString("url"), url.PathEscape(token))
+
+	// отпрвка сообщения на почту пользователя с ссылкой для восстановления пароля
+
+}
+
+// // определение пользователя по JWT
+func (h *Handler) definitionUserJWT(c *gin.Context) {
+
+	// вытаскиваем с URL JWT
+	token := c.Query("token")
+	if token == "" {
+		newErrorResponse(c, http.StatusBadRequest, "empty auth token")
+		return
+	}
+
+	// определяем пользователя по JWT
+	_, err := h.service.ParseToken(token)
+	if err != nil {
+		newErrorResponse(c, http.StatusServiceUnavailable, err.Error())
+		return
+	}
+
+	// отправляем форму для нового пароля
+	c.HTML(http.StatusOK, "new_pass.html", gin.H{})
+}
+
+// восстановление пароля
+func (h *Handler) recoveryPass(c *gin.Context) {
 }

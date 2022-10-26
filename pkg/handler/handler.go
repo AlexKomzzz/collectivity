@@ -44,17 +44,31 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		// Войти в систему
 		// auth.StaticFile("/login-form", "./web/templates/login.html")
 		auth.GET("/login", func(c *gin.Context) {
-			c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+			c.HTML(http.StatusOK, "login.html", gin.H{})
 		})
 
 		// отправка формы для создания пользователя
-		// auth.StaticFile("/sign-form", "./web/templates/forma_auth.html")
-		auth.GET("/sign-form", h.formAuth)
+		auth.StaticFile("/sign-form", "./web/templates/forma_auth.html")
+		// auth.GET("/sign-form", h.formAuth)
 
 		auth.POST("/sign-up", h.signUp)
 		auth.POST("/sign-in", h.signIn)
-		// сброс пароля
-		auth.GET("/refresh-pass", h.test)
+
+		// восстановление пароля
+		pass := auth.Group("/pass")
+		{
+			// форма восстановления пароля recovery-pass-form
+			// auth.StaticFile("/recovery-pass-form", "./web/templates/recovery_pass.html")
+			pass.POST("/recovery-pass-form", func(c *gin.Context) {
+				c.HTML(http.StatusOK, "recovery_pass.html", gin.H{})
+			})
+			// определение пользователя по email
+			pass.POST("/definition-user", h.definitionUser)
+			// определение пользователя по JWT
+			pass.GET("/definition-userJWT", h.definitionUserJWT)
+			// восстановление пароля
+			pass.GET("/recovery-pass", h.recoveryPass)
+		}
 
 		// идентификация через google
 		google := auth.Group("/google")

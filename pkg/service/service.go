@@ -16,8 +16,12 @@ type Authorization interface {
 	// генерация JWT при Google или Яндекс авторизации
 	// в переменную typeAPI необходимо передать 'google' либо 'yandex'
 	GenerateJWT_API(idUser int) (string, error)
+	// проверка заголовка авторизации на валидность
+	ValidToken(headerAuth string) (int, error)
 	// Парс токена (получаем из токена id)
 	ParseToken(accesstoken string) (int, error)
+	// идентификация пользователя по email
+	DefinitionUserByEmail(email string) (string, error)
 }
 
 type Service struct {

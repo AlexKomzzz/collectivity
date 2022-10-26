@@ -4,6 +4,7 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	app "github.com/AlexKomzzz/collectivity"
@@ -94,6 +95,22 @@ func (service *AuthService) GenerateJWT_API(idUser int) (string, error) {
 	return generateJWT(idUser)
 }
 
+// проверка токена на валидность
+func (service *AuthService) ValidToken(headerAuth string) (int, error) {
+
+	headerParts := strings.Split(headerAuth, " ")
+	if len(headerParts) != 2 || headerParts[0] != "Bearer" || headerParts[1] == "" {
+		return -1, errors.New("invalid auth header")
+	}
+
+	userId, err := service.ParseToken(headerParts[1])
+	if err != nil {
+		return -1, err
+	}
+
+	return userId, nil
+}
+
 // Парс токена (получаем из токена id)
 func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 	token, err := jwt.ParseWithClaims(accesstoken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
@@ -114,9 +131,11 @@ func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 	return claims.UserId, nil
 }
 
-/*
-// функция получения username по id
-func (service *AuthService) GetUsername(userId int) (string, error) {
-	return service.repos.GetUsername(userId)
+// функция проверки пользователя по email
+func (service *AuthService) DefinitionUserByEmail(email string) (string, error) {
+	idUser, err := service.repos.GetUserByEmail(email)
+	if err != nil {
+		return "", nil
+	}
+	return generateJWT(idUser)
 }
-*/

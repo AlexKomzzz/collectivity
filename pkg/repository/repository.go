@@ -13,6 +13,8 @@ type Authorization interface {
 	CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
 	// определение id пользователя по email и паролю
 	GetUser(email, password string) (int, error)
+	// определение id пользователя по email
+	GetUserByEmail(email string) (int, error)
 	// определение id пользователя по email и id для Google и Яндекс API
 	// в переменную typeAPI необходимо передать 'google' либо 'yandex'
 	// GetUserAPI(typeAPI, idAPI, email string) (int, error)
