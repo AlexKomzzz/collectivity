@@ -24,6 +24,10 @@ type Authorization interface {
 	DefinitionUserByEmail(email string) (string, error)
 	// отправка сообщения пользователю на почту для передачи ссылки на восстановление пароля
 	SendMessage(emailUser, url string) error
+	// хэширование и проверка паролей на соответсвие
+	CheckPass(psw, refreshPsw *string) error
+	// обновление пароля у пользователя
+	UpdatePass(idUser, newHashPsw string) error
 }
 
 type Service struct {

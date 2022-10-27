@@ -56,16 +56,28 @@ func generateJWT(idUser int) (string, error) {
 // функция создания Пользователя в БД
 // возвращяет id
 func (service *AuthService) CreateUser(user *app.User, passRepeat string) (int, error) {
-	// захешим пароли
-	user.Password = generatePasswordHash(user.Password)
-	passRepeat = generatePasswordHash(passRepeat)
 
-	// Сравним переданные пароли
-	if user.Password != passRepeat {
-		return 0, errors.New("пароли не совпадают")
+	// захешим и сравним переданные пароли
+	err := service.CheckPass(&user.Password, &passRepeat)
+	if err != nil {
+		return 0, err
 	}
 
 	return service.repos.CreateUser(user)
+}
+
+// хэширование и проверка паролей на соответсвие
+func (service *AuthService) CheckPass(psw, refreshPsw *string) error {
+	// захешим пароли
+	*psw = generatePasswordHash(*psw)
+	*refreshPsw = generatePasswordHash(*refreshPsw)
+
+	// Сравним переданные пароли
+	if psw != refreshPsw {
+		return errors.New("пароли не совпадают")
+	}
+
+	return nil
 }
 
 // функция создания Пользователя при авторизации через Google или Яндекс
@@ -173,4 +185,10 @@ func (service *AuthService) SendMessage(emailUser, url string) error {
 	}
 
 	return nil
+}
+
+// обновление пароля у пользователя
+func (service *AuthService) UpdatePass(idUser, newHashPsw string) error {
+
+	return service.repos.UpdatePass(idUser, newHashPsw)
 }

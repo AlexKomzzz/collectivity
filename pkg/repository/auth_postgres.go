@@ -88,6 +88,18 @@ func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 	return id, nil
 }
 
+// обновление пароля у пользователя
+func (service *AuthPostgres) UpdatePass(idUser, newHashPsw string) error {
+
+	query := "UPDATE password_hash=$1 FROM users WHERE id=$2" // ПРОВЕРИТЬ!!!!!
+	_, err := service.db.Exec(query, newHashPsw, idUser)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
 /*
 // определение username пользователя по id
 func (r *AuthPostgres) GetUsername(userId int) (string, error) {

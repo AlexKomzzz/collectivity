@@ -180,6 +180,7 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	}*/
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
+		logrus.Println(err)
 		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
 			"error": err,
 		})
@@ -235,24 +236,96 @@ func (h *Handler) definitionUser(c *gin.Context) {
 // // определение пользователя по JWT
 func (h *Handler) definitionUserJWT(c *gin.Context) {
 
-	// вытаскиваем с URL JWT
+	// определение JWT из URL
 	token := c.Query("token")
 	if token == "" {
+		logrus.Println("empty auth token")
 		newErrorResponse(c, http.StatusBadRequest, "empty auth token")
 		return
 	}
 
 	// определяем пользователя по JWT
-	_, err := h.service.ParseToken(token)
+	idUser, err := h.service.ParseToken(token)
 	if err != nil {
+		logrus.Println(err)
 		newErrorResponse(c, http.StatusServiceUnavailable, err.Error())
 		return
 	}
 
 	// отправляем форму для нового пароля
-	c.HTML(http.StatusOK, "new_pass.html", gin.H{})
+	c.HTML(http.StatusOK, "new_pass.html", gin.H{
+		"id": idUser,
+	})
 }
 
 // восстановление пароля
 func (h *Handler) recoveryPass(c *gin.Context) {
+
+	var psw, refreshPsw, idUser string
+
+	// передать idUser!!!
+
+	// ContentType = text/plain
+	// выделим тело запроса
+	/* структура тела запроса {
+		psw=<new_password>
+		refresh_psw=<refresh_psw>
+		id_user=<your_id>
+	}*/
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		logrus.Println(err)
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
+	// выделим новый пароль и повторный пароль из body
+	// разделим поля данных в запросе
+	res := bytes.Split(body, []byte{13, 10})
+	for _, params := range res {
+		// делим строки по знаку равенства
+		paramsSl := strings.Split(string(params), "=")
+
+		if paramsSl[0] == "psw" {
+			if paramsSl[1] == "" {
+				logrus.Println("не передан пароль")
+				newErrorResponse(c, http.StatusBadRequest, "Повторите попытку")
+				return
+			}
+			psw = paramsSl[1]
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "refresh_psw" {
+			if paramsSl[1] == "" {
+				logrus.Println("не передан повторный пароль")
+				newErrorResponse(c, http.StatusBadRequest, "Повторите попытку")
+				return
+			}
+			refreshPsw = paramsSl[1]
+			// log.Println(paramsSl[1])
+		} else if paramsSl[0] == "id_user" {
+			if paramsSl[1] == "" {
+				logrus.Println("не передан idUser при восстановлении пароля")
+				newErrorResponse(c, http.StatusBadRequest, "Повторите попытку")
+				return
+			}
+			idUser = paramsSl[1]
+			// log.Println(paramsSl[1])
+		}
+	}
+
+	// захэшируем пароли и проверим, что они совпадают
+	err = h.service.CheckPass(&psw, &refreshPsw)
+	if err != nil {
+		logrus.Println(err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
+	}
+
+	// перезапишем новый пароль в БД
+	err = h.service.UpdatePass(idUser, psw)
+	if err != nil {
+		logrus.Println(err)
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
 }
