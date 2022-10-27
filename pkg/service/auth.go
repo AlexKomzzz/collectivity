@@ -4,6 +4,8 @@ import (
 	"crypto/sha1"
 	"errors"
 	"fmt"
+	"net/smtp"
+	"os"
 	"strings"
 	"time"
 
@@ -138,4 +140,37 @@ func (service *AuthService) DefinitionUserByEmail(email string) (string, error) 
 		return "", nil
 	}
 	return generateJWT(idUser)
+}
+
+// отправка сообщения пользователю на почту для передачи ссылки на восстановление пароля
+func (service *AuthService) SendMessage(emailUser, url string) error {
+
+	// почта от куда отправляется ссылка
+	emailAPI := os.Getenv("emailAddr")
+	passwordAPI := os.Getenv("SMTPpwd")
+	// emailAPI := "komalex203@gmail.com"
+	// passwordAPI := "3411019873svetA"
+	// host := "smtp.gmail.com"
+	host := "smtp.yandex.ru"
+	// port := "587"
+	port := "465"
+	address := host + ":" + port
+
+	// Настройка аутентификации отправителя
+	// auth := sasl.NewPlainClient("", emailAPI, passwordAPI)
+	auth := smtp.PlainAuth("", emailAPI, passwordAPI, host)
+
+	// список рассылки
+	to := []string{emailUser}
+
+	msg := fmt.Sprintf("To: %s\r\n"+
+		"Subject: Восстановление пароля\r\n"+
+		"\r\n"+
+		"Для восстановления пароля перейдите по ссылке: %s.\r\n", to[0], url)
+	err := smtp.SendMail(address, auth, emailAPI, to, []byte(msg))
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

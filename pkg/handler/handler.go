@@ -67,7 +67,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 			// определение пользователя по JWT
 			pass.GET("/definition-userJWT", h.definitionUserJWT)
 			// восстановление пароля
-			pass.GET("/recovery-pass", h.recoveryPass)
+			pass.POST("/recovery-pass", h.recoveryPass)
 		}
 
 		// идентификация через google

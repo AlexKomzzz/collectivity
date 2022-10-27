@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 )
 
 type Resp struct {
@@ -12,7 +13,10 @@ type Resp struct {
 }
 
 func (h *Handler) test(c *gin.Context) {
-	c.HTML(http.StatusBadRequest, "login.html", gin.H{
-		"error": "Такого пользователя не существует",
-	})
+	err := h.service.SendMessage("komalex203@gmail.com", "ссылка")
+	if err != nil {
+		logrus.Println(err)
+		newErrorResponse(c, http.StatusServiceUnavailable, err.Error())
+		return
+	}
 }

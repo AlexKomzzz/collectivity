@@ -10,6 +10,7 @@ import (
 
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/gin-gonic/gin"
+	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
@@ -169,7 +170,7 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 // определение пользователя по email
 func (h *Handler) definitionUser(c *gin.Context) {
 
-	var email string
+	var emailUser string
 
 	// ContentType = text/plain
 	// выделим тело запроса
@@ -193,29 +194,41 @@ func (h *Handler) definitionUser(c *gin.Context) {
 		paramsSl := strings.Split(string(params), "=")
 
 		if paramsSl[0] == "email" {
-			email = paramsSl[1]
+			emailUser = paramsSl[1]
 			// log.Println(paramsSl[1])
 		}
 	}
 
 	// идентифицируем пользователя по email
-	token, err := h.service.DefinitionUserByEmail(email)
-	if err.Error() == "sql: no rows in result set" {
-		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-			"error": "Пользователя с такой почтой не существует.",
-		})
-		return
-	} else {
+	token, err := h.service.DefinitionUserByEmail(emailUser)
+	if err != nil {
+		if err.Error() == "sql: no rows in result set" {
+			logrus.Println(err)
+			c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+				"error": "Пользователя с такой почтой не существует.",
+			})
+			return
+		} else {
+			logrus.Println(err)
+			c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+				"error": err,
+			})
+			return
+		}
+	}
+
+	// формирование URL
+	URLs := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s", viper.GetString("url"), url.PathEscape(token))
+
+	// отпрвка сообщения на почту пользователя с ссылкой для восстановления пароля
+	err = h.service.SendMessage(emailUser, URLs)
+	if err != nil {
+		logrus.Println(err)
 		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
 			"error": err,
 		})
 		return
 	}
-
-	// формирование URL
-	URL := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s", viper.GetString("url"), url.PathEscape(token))
-
-	// отпрвка сообщения на почту пользователя с ссылкой для восстановления пароля
 
 }
 
