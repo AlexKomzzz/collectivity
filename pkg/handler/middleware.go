@@ -1,31 +1,33 @@
 package handler
 
 import (
-	"net/http"
+	"errors"
 
 	"github.com/gin-gonic/gin"
 )
 
 const (
 	authorizationHeader = "Authorization"
-	userCtx             = "userId"
+	// userCtx             = "userId"
 )
 
-func (h *Handler) userIdentity(c *gin.Context) {
+func (h *Handler) userIdentity(c *gin.Context) (int, error) {
 
-	header := c.GetHeader(authorizationHeader) // выделяем из заголовка поле "Authorization"
+	// выделение из заголовка поля "Authorization"
+	header := c.GetHeader(authorizationHeader)
 	if header == "" {
-		newErrorResponse(c, http.StatusUnauthorized, "empty auth header")
-		return
+		// newErrorResponse(c, http.StatusUnauthorized, "empty auth header")
+		return -1, errors.New("empty auth header")
 	}
 
-	userId, err := h.service.ValidToken(header)
+	idUser, err := h.service.ValidToken(header)
 	if err != nil {
-		newErrorResponse(c, http.StatusUnauthorized, err.Error())
-		return
+		// newErrorResponse(c, http.StatusUnauthorized, err.Error())
+		return -1, err
 	}
 
-	c.Set(userCtx, userId)
+	// c.Set(userCtx, userId)
+	return idUser, nil
 }
 
 /*

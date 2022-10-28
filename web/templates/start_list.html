@@ -8,10 +8,14 @@
 	<title></title>
 </head>
 <body>
-<div class="container">
-<br><br>
-<p> Hello, {{ .req }}</p>
-</div>
+	<div class="container">
+		<br><br>
+		{{ range . }}
+			<p> Hello, {{ . }}</p>
+		{{ else }}
+			<p> Hello, Alex</p>
+		{{ end }}
+	</div>
 </body>
 </html>
 {{end}}

@@ -46,7 +46,10 @@
         <div class="section"></div>
         <main>
             <center>
+                {{ range . }}
                 <div class="error_title">{{ .error }}</div>
+                {{ else }}
+                {{ end }}
                 <div class="section"></div>
                 <div class="container">
                     <div class="z-depth-1 grey lighten-4 row"

@@ -33,10 +33,11 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	mux.GET("/test", h.test)
 
 	// основная страница сайта
-	api := mux.Group("/", h.userIdentity)
-	{
-		api.StaticFile("/", "./web/templates/start_list.html")
-	}
+	mux.GET("/", h.startList)
+	// api := mux.Group("/", h.userIdentity)
+	// {
+	// 	api.StaticFile("/", "./web/templates/start_list.html")
+	// }
 
 	// авторизация и аутентификация
 	auth := mux.Group("/auth") // Группа аутентификации

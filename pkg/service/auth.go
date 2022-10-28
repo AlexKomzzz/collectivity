@@ -117,12 +117,7 @@ func (service *AuthService) ValidToken(headerAuth string) (int, error) {
 		return -1, errors.New("invalid auth header")
 	}
 
-	userId, err := service.ParseToken(headerParts[1])
-	if err != nil {
-		return -1, err
-	}
-
-	return userId, nil
+	return service.ParseToken(headerParts[1])
 }
 
 // Парс токена (получаем из токена id)
@@ -191,4 +186,10 @@ func (service *AuthService) SendMessage(emailUser, url string) error {
 func (service *AuthService) UpdatePass(idUser, newHashPsw string) error {
 
 	return service.repos.UpdatePass(idUser, newHashPsw)
+}
+
+// проверка роли пользователя по id
+func (service *AuthService) GetRole(idUser int) (string, error) {
+
+	return service.repos.GetRole(idUser)
 }

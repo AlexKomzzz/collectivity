@@ -100,6 +100,16 @@ func (service *AuthPostgres) UpdatePass(idUser, newHashPsw string) error {
 	return nil
 }
 
+// проверка роли пользователя по id
+func (service *AuthPostgres) GetRole(idUser int) (string, error) {
+	var roleUser string
+
+	query := "SELECT role FROM users WHERE id=$1"
+	err := service.db.Get(&roleUser, query, idUser)
+
+	return roleUser, err
+}
+
 /*
 // определение username пользователя по id
 func (r *AuthPostgres) GetUsername(userId int) (string, error) {

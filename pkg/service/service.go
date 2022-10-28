@@ -28,6 +28,8 @@ type Authorization interface {
 	CheckPass(psw, refreshPsw *string) error
 	// обновление пароля у пользователя
 	UpdatePass(idUser, newHashPsw string) error
+	// проверка роли пользователя по id
+	GetRole(idUser int) (string, error)
 }
 
 type Service struct {
