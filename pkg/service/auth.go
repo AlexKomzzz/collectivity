@@ -24,9 +24,15 @@ func NewAuthService(repos *repository.Repository) *AuthService {
 	return &AuthService{repos: repos}
 }
 
-const tokenTTL = 300 * time.Hour
+const (
+	tokenTTL        = 300 * time.Hour  // время жизни токена аутентификации
+	tokenTTLtoEmail = 15 * time.Minute // время жизни токена при восстановлении пароля или подтверждении почты
+)
 
-const JWT_SECRET = "rkjk#4#%35FSFJlja#4353KSFjH"
+const (
+	JWT_SECRET      = "rkjk#4#%35FSFJlja#4353KSFjH"
+	JWTemail_SECRET = "r2sk#4#gdfoij743*#weg(FjH"
+)
 
 type tokenClaims struct {
 	jwt.StandardClaims
@@ -51,6 +57,19 @@ func generateJWT(idUser int) (string, error) {
 	})
 
 	return token.SignedString([]byte(JWT_SECRET))
+}
+
+// генерация JWT с id пользователя при восстановлении пароля и проверки почты
+func generateJWTtoEmail(idUser int) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{ // генерация токена
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(tokenTTLtoEmail).Unix(), // время действия токена
+			IssuedAt:  time.Now().Unix(),                      //время создания
+		},
+		idUser,
+	})
+
+	return token.SignedString([]byte(JWTemail_SECRET))
 }
 
 // функция создания Пользователя в БД
@@ -140,13 +159,34 @@ func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 	return claims.UserId, nil
 }
 
-// функция проверки пользователя по email
+// Парс токена при восстановлении пароля или подтверждении почты
+func (service *AuthService) ParseTokenEmail(accesstoken string) (int, error) {
+	token, err := jwt.ParseWithClaims(accesstoken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
+		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
+			return nil, errors.New("invalid signing method")
+		}
+		return []byte(JWTemail_SECRET), nil
+	})
+	if err != nil {
+		return 0, err
+	}
+
+	claims, ok := token.Claims.(*tokenClaims)
+	if !ok {
+		return 0, errors.New("token claims are not of type *tokenClaims")
+	}
+
+	return claims.UserId, nil
+}
+
+// функция проверки пользователя по email с выдачей токена JWT
 func (service *AuthService) DefinitionUserByEmail(email string) (string, error) {
 	idUser, err := service.repos.GetUserByEmail(email)
 	if err != nil {
 		return "", nil
 	}
-	return generateJWT(idUser)
+	// использовать другой токен
+	return generateJWTtoEmail(idUser)
 }
 
 // отправка сообщения пользователю на почту для передачи ссылки на восстановление пароля

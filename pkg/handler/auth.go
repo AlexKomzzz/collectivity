@@ -134,24 +134,6 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 	})
 }
 
-/*
-// отправление формы для создания нового пользователя
-func (h *Handler) formAuth(c *gin.Context) {
-	// вытаскиваем с URL ошибку
-	errorString := c.Query("error")
-
-	// передаем форму для создание акк
-	c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-		"error": errorString,
-	})
-
-}*/
-
-// type signInInput struct { // Структура для идентификации
-// 	Email    string `json:"email" binding:"required"`
-// 	Password string `json:"password" binding:"required"`
-// }
-
 // авторизация пользователя, выдача JWT
 func (h *Handler) signIn(c *gin.Context) { // Обработчик для аутентификации и получения токена
 
@@ -206,7 +188,7 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 	})
 }
 
-// определение пользователя по email
+// определение пользователя по email при восстановлении пароля
 func (h *Handler) definitionUser(c *gin.Context) {
 
 	var emailUser string
@@ -269,7 +251,6 @@ func (h *Handler) definitionUser(c *gin.Context) {
 		})
 		return
 	}
-
 }
 
 // // определение пользователя по JWT
@@ -284,7 +265,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	}
 
 	// определяем пользователя по JWT
-	idUser, err := h.service.ParseToken(token)
+	idUser, err := h.service.ParseTokenEmail(token)
 	if err != nil {
 		logrus.Println(err)
 		newErrorResponse(c, http.StatusServiceUnavailable, err.Error())

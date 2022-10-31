@@ -20,6 +20,8 @@ type Authorization interface {
 	ValidToken(headerAuth string) (int, error)
 	// Парс токена (получаем из токена id)
 	ParseToken(accesstoken string) (int, error)
+	// Парс токена при восстановлении пароля или подтверждении почты
+	ParseTokenEmail(accesstoken string) (int, error)
 	// идентификация пользователя по email
 	DefinitionUserByEmail(email string) (string, error)
 	// отправка сообщения пользователю на почту для передачи ссылки на восстановление пароля
