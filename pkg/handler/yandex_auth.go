@@ -69,14 +69,19 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	// Сравним cookie
 	oauthState, err := c.Cookie("oauthstate")
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "Cookie invalid: "+err.Error())
+		logrus.Println(err)
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
 	// сравним поле state  для защиты от CSRF-атак
 	if c.Request.FormValue("state") != oauthState {
 		logrus.Println("invalid oauth yandex state")
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
@@ -90,8 +95,10 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	// получение данных пользователя от API Яндекс ID
 	dataAPIyandex, err := getUserDataFromYandex(c)
 	if err != nil {
-		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
+		logrus.Println(err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
@@ -102,8 +109,10 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	// создание пользователя в БД (или обновление, если уже создан)
 	idUser, err := h.service.CreateUserAPI("yandex", userData.Id, userData.FirstName, userData.LastName, userData.Email)
 	if err != nil {
-		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
+		logrus.Println(err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
@@ -111,8 +120,9 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 	token, err := h.service.GenerateJWT_API(idUser)
 	if err != nil {
 		logrus.Println(err.Error())
-		// c.HTML(error.html)
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
