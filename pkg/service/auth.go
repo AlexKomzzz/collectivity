@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -116,14 +117,10 @@ func (service *AuthService) GenerateJWT(email, password string) (string, error) 
 	return generateJWT(idUser)
 }
 
-// генерация JWT при Google или Яндекс авторизации
+// генерация JWT с указанием idUser
+// при Google или Яндекс авторизации
 // в переменную typeAPI необходимо передать 'google' либо 'yandex'
 func (service *AuthService) GenerateJWT_API(idUser int) (string, error) {
-	// определим id пользователя
-	// idUser, err := service.repos.GetUserAPI(typeAPI, idAPI, email)
-	// if err != nil {
-	// 	return "", err
-	// }
 
 	return generateJWT(idUser)
 }
@@ -143,7 +140,7 @@ func (service *AuthService) ValidToken(headerAuth string) (int, error) {
 func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 	token, err := jwt.ParseWithClaims(accesstoken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
+			return nil, errors.New("invalid signing method JWT")
 		}
 		return []byte(JWT_SECRET), nil
 	})
@@ -223,7 +220,7 @@ func (service *AuthService) SendMessage(emailUser, url string) error {
 }
 
 // обновление пароля у пользователя
-func (service *AuthService) UpdatePass(idUser, newHashPsw string) error {
+func (service *AuthService) UpdatePass(idUser int, newHashPsw string) error {
 
 	return service.repos.UpdatePass(idUser, newHashPsw)
 }
@@ -232,4 +229,10 @@ func (service *AuthService) UpdatePass(idUser, newHashPsw string) error {
 func (service *AuthService) GetRole(idUser int) (string, error) {
 
 	return service.repos.GetRole(idUser)
+}
+
+// конвертация idUser из строки в число
+func (service *AuthService) ConvIdUser(idUserStr string) (int, error) {
+
+	return strconv.Atoi(idUserStr)
 }

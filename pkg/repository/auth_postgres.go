@@ -89,7 +89,7 @@ func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 }
 
 // обновление пароля у пользователя
-func (service *AuthPostgres) UpdatePass(idUser, newHashPsw string) error {
+func (service *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
 
 	query := "UPDATE password_hash=$1 FROM users WHERE id=$2" // ПРОВЕРИТЬ!!!!!
 	_, err := service.db.Exec(query, newHashPsw, idUser)

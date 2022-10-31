@@ -39,16 +39,16 @@ func (h *Handler) startList(c *gin.Context) {
 		}
 	}
 
-	logrus.Println("roleUser: ", roleUser)
 	if roleUser == "admin" {
 		// значит это админ
+		logrus.Println("вход админа")
 		c.HTML(http.StatusOK, "start_list.html", gin.H{
 			"role": roleUser,
 		})
 		return
 	} else {
-		logrus.Println("ошибка в определении роли пользователя из БД")
-		newErrorResponse(c, http.StatusInternalServerError, "ошибка в определении роли пользователя из БД")
+		logrus.Println("обычный пользователь")
+		c.HTML(http.StatusOK, "start_list.html", gin.H{})
 		return
 	}
 }
@@ -281,7 +281,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 // восстановление пароля
 func (h *Handler) recoveryPass(c *gin.Context) {
 
-	var psw, refreshPsw, idUser string
+	var psw, refreshPsw, idUserStr string
 
 	// передать idUser!!!
 
@@ -299,7 +299,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		return
 	}
 
-	// выделим новый пароль и повторный пароль из body
+	// выделим новый пароль и повторный пароль и idUser из body
 	// разделим поля данных в запросе
 	res := bytes.Split(body, []byte{13, 10})
 	for _, params := range res {
@@ -328,9 +328,17 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 				newErrorResponse(c, http.StatusBadRequest, "Повторите попытку")
 				return
 			}
-			idUser = paramsSl[1]
+			idUserStr = paramsSl[1]
 			// log.Println(paramsSl[1])
 		}
+	}
+
+	// конвертируем idUser в числовое представление из строкового
+	idUser, err := h.service.ConvIdUser(idUserStr)
+	if err != nil {
+		logrus.Println("ошибка конвертации isUser из string в int: ", err)
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		return
 	}
 
 	// захэшируем пароли и проверим, что они совпадают
@@ -349,9 +357,22 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		return
 	}
 
+	// сгенерируем JWT
+	token, err := h.service.GenerateJWT_API(idUser)
+	if err != nil {
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": err,
+		})
+		//newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
+	}
+
 	// перенаправить на страницу авторизации
 	// либо стразу выдать JWT???
-	c.HTML(http.StatusOK, "login.html", gin.H{
-		"error": "Пароль обновлен",
+	// c.HTML(http.StatusOK, "login.html", gin.H{
+	// 	"error": "Пароль обновлен",
+	// })
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
 	})
 }
