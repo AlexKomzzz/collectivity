@@ -60,22 +60,9 @@ func generateJWT(idUser int) (string, error) {
 	return token.SignedString([]byte(JWT_SECRET))
 }
 
-// генерация JWT с id пользователя при восстановлении пароля и проверки почты
-func generateJWTtoEmail(idUser int) (string, error) {
-	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{ // генерация токена
-		jwt.StandardClaims{
-			ExpiresAt: time.Now().Add(tokenTTLtoEmail).Unix(), // время действия токена
-			IssuedAt:  time.Now().Unix(),                      //время создания
-		},
-		idUser,
-	})
-
-	return token.SignedString([]byte(JWTemail_SECRET))
-}
-
-// функция создания Пользователя в БД
-// возвращяет id
-func (service *AuthService) CreateUser(user *app.User, passRepeat string) (int, error) {
+// создание пользователя в БД регистрации (при создании нового пользователя, когда эл. почта не потверждена)
+// возвращяет id созданного пользователя из таблицы authdata
+func (service *AuthService) CreateUserByAuth(user *app.User, passRepeat string) (int, error) {
 
 	// захешим и сравним переданные пароли
 	err := service.CheckPass(&user.Password, &passRepeat)
@@ -83,6 +70,12 @@ func (service *AuthService) CreateUser(user *app.User, passRepeat string) (int, 
 		return 0, err
 	}
 
+	return service.repos.CreateUserByAuth(user)
+}
+
+// создание пользователя в БД (при создании нового пользователя и потверждении эл.почты)
+// возвращяет id созданного пользователя из таблицы users
+func (service *AuthService) CreateUser(user *app.User) (int, error) {
 	return service.repos.CreateUser(user)
 }
 
@@ -106,6 +99,22 @@ func (service *AuthService) CreateUserAPI(typeAPI, idAPI, firstName, lastName, e
 	return service.repos.CreateUserAPI(typeAPI, idAPI, firstName, lastName, email)
 }
 
+// определение idUser по email
+func (service *AuthService) GetUserByEmail(email string) (int, error) {
+	return service.repos.GetUserByEmail(email)
+}
+
+// получение данных о пользователе (с неподтвержденным email) из БД authdata
+func (service *AuthService) GetUserFromAuth(idUserAuth int) (app.User, error) {
+	return service.repos.GetUserFromAuth(idUserAuth)
+}
+
+// проверка роли пользователя по id
+func (service *AuthService) GetRole(idUser int) (string, error) {
+
+	return service.repos.GetRole(idUser)
+}
+
 // генерация JWT по email и паролю
 func (service *AuthService) GenerateJWT(email, password string) (string, error) {
 	// определим id пользователя
@@ -123,6 +132,19 @@ func (service *AuthService) GenerateJWT(email, password string) (string, error) 
 func (service *AuthService) GenerateJWT_API(idUser int) (string, error) {
 
 	return generateJWT(idUser)
+}
+
+// генерация токена для восстановления пароля или подтверждения почты
+func (service *AuthService) GenerateJWTtoEmail(idUser int) (string, error) {
+	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{ // генерация токена
+		jwt.StandardClaims{
+			ExpiresAt: time.Now().Add(tokenTTLtoEmail).Unix(), // время действия токена
+			IssuedAt:  time.Now().Unix(),                      //время создания
+		},
+		idUser,
+	})
+
+	return token.SignedString([]byte(JWTemail_SECRET))
 }
 
 // проверка токена на валидность
@@ -176,24 +198,14 @@ func (service *AuthService) ParseTokenEmail(accesstoken string) (int, error) {
 	return claims.UserId, nil
 }
 
-// функция проверки пользователя по email с выдачей токена JWT
-func (service *AuthService) DefinitionUserByEmail(email string) (string, error) {
-	idUser, err := service.repos.GetUserByEmail(email)
-	if err != nil {
-		return "", nil
-	}
-	// использовать другой токен
-	return generateJWTtoEmail(idUser)
-}
-
-// отправка сообщения пользователю на почту для передачи ссылки на восстановление пароля
-func (service *AuthService) SendMessage(emailUser, url string) error {
+// отправка сообщения пользователю на почту для передачи ссылки
+func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error {
 
 	// почта от куда отправляется ссылка
 	emailAPI := os.Getenv("emailAddr")
 	passwordAPI := os.Getenv("SMTPpwd")
 	// emailAPI := "komalex203@gmail.com"
-	// passwordAPI := "3411019873svetA"
+	// passwordAPI := ""
 	// host := "smtp.gmail.com"
 	host := "smtp.yandex.ru"
 	// port := "587"
@@ -207,10 +219,6 @@ func (service *AuthService) SendMessage(emailUser, url string) error {
 	// список рассылки
 	to := []string{emailUser}
 
-	msg := fmt.Sprintf("To: %s\r\n"+
-		"Subject: Восстановление пароля\r\n"+
-		"\r\n"+
-		"Для восстановления пароля перейдите по ссылке: %s.\r\n", to[0], url)
 	err := smtp.SendMail(address, auth, emailAPI, to, []byte(msg))
 	if err != nil {
 		return err
@@ -225,14 +233,19 @@ func (service *AuthService) UpdatePass(idUser int, newHashPsw string) error {
 	return service.repos.UpdatePass(idUser, newHashPsw)
 }
 
-// проверка роли пользователя по id
-func (service *AuthService) GetRole(idUser int) (string, error) {
-
-	return service.repos.GetRole(idUser)
-}
-
 // конвертация idUser из строки в число
 func (service *AuthService) ConvIdUser(idUserStr string) (int, error) {
 
 	return strconv.Atoi(idUserStr)
+}
+
+// сравнение email полученного и сохраненного в БД
+func (service *AuthService) ComparisonEmail(emailUser, emailURL string) error {
+
+	// Сравним emails
+	if emailUser != emailURL {
+		return errors.New("emails не совпадают")
+	}
+
+	return nil
 }
