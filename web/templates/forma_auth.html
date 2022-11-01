@@ -1,228 +1,258 @@
 {{ define "forma_auth.html" }}
 <!DOCTYPE html>
 <html>
-<head>
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<style>
-body {
-    font-family: Arial, Helvetica, sans-serif;
-    background-color: black;
-}
 
-* {
-    box-sizing: border-box;
-}
+    <head>
+        <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet">
+        <link rel="stylesheet" type="text/css"
+            href="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/css/materialize.min.css">
+        <style>
+            body {
+                display: flex;
+                min-height: 100vh;
+                flex-direction: column;
+            }
 
-/* Add padding to containers */
-.container {
-    padding: 16px;
-    background-color: white;
-}
+            main {
+                flex: 1 0 auto;
+            }
 
-/* Full-width input fields */
-input[type=text], input[type=password] {
-    width: 100%;
-    padding: 15px;
-    margin: 5px 0 22px 0;
-    display: inline-block;
-    border: none;
-    background: #f1f1f1;
-}
+            body {
+                background: #fff;
+            }
 
-input[type=text]:focus, input[type=password]:focus {
-    background-color: #ddd;
-    outline: none;
-}
+            .error_title{
+                color: #e91e63
+            }
 
-/* Overwrite default styles of hr */
-hr {
-    border: 1px solid #f1f1f1;
-    margin-bottom: 25px;
-}
+            .input-field input[type=date]:focus + label,
+            .input-field input[type=text]:focus + label,
+            .input-field input[type=email]:focus + label,
+            .input-field input[type=password]:focus + label {
+                color: #e91e63;
+            }
 
-/* Set a style for the submit button */
-.registerbtn {
-    background-color: #3f51b5;
-    color: white;
-    padding: 16px 20px;
-    margin: 8px 0;
-    border: none;
-    cursor: pointer;
-    width: 100%;
-    opacity: 0.9;
-    letter-spacing: .5px;
-    text-transform: uppercase;
-}
+            .input-field input[type=date]:focus,
+            .input-field input[type=text]:focus,
+            .input-field input[type=email]:focus,
+            .input-field input[type=password]:focus {
+                border-bottom: 2px solid #e91e63;
+                box-shadow: none;
+            }
 
-.registerbtn:hover {
-    opacity: 1;
-}
+            /* The message box is shown when the user clicks on the password field */
+            #message {
+                display:none;
+                background: #f1f1f1;
+                color: #000;
+                position: relative;
+                padding: 10px;
+                margin-top: -25px;
+            }
 
-/* Add a blue text color to links */
-a {
-    color: dodgerblue;
-}
+            #message p {
+                padding: 10px 35px;
+                font-size: 12px;
+            }
 
-/* Set a grey background color and center the text of the "sign in" section */
-.signin {
-    background-color: #f1f1f1;
-    text-align: center;
-}
+            .titlemes {
+                font-size: 12px;
+            }
 
-.error-pass {
-  color: #e91e63
-}
+            /* Add a green text color and a checkmark when the requirements are right */
+            .valid {
+                color: green;
+            }
 
-/* The message box is shown when the user clicks on the password field */
-#message {
-    display:none;
-    background: #f1f1f1;
-    color: #000;
-    position: relative;
-    padding: 10px;
-    margin-top: -25px;
-}
+            .valid:before {
+                position: relative;
+                left: -25px;
+                content: "✔";
+            }
 
-#message p {
-    padding: 10px 35px;
-    font-size: 12px;
-}
+            /* Add a red text color and an "x" when the requirements are wrong */
+            .invalid {
+                color: red;
+            }
 
-.titlemes {
-	font-size: 12px;
-}
+            .invalid:before {
+                position: relative;
+                left: -25px;
+                content: "✖";
+            }
+        </style>
+    </head>
 
-/* Add a green text color and a checkmark when the requirements are right */
-.valid {
-    color: green;
-}
+    <body>
+        <div class="section"></div>
+        <main>
+            <div class="section"></div>
+            <div class="container">
+                <h4>Регистрация</h4>
+                <p>Пожалуйста, заполните эту форму, чтобы создать учетную запись.</p> 
+                <hr>
+            </div>
+            <center>
+                <div class="container">
+                    <div class="z-depth-1 grey lighten-4 row"
+                        style="display: inline-block; padding: 32px 48px 0px 48px; border: 1px solid #EEE;">
 
-.valid:before {
-    position: relative;
-    left: -25px;
-    content: "✔";
-}
+                        {{ range . }}
+                        <div class="error_title">{{ . }}</div>
+                        {{ else }}
+                        {{ end }}
+                        
+                        <form class="col s12" method="post" action="/auth/sign-up" enctype="text/plain">
+                            <div class='row'>
+                                <div class='col s12'>
+                                </div>
+                            </div>
+                            
+                            <div class='row'>
+                                <div class='input-field col s12'>
+                                    <input class='validate' type="text" placeholder="Введите вашу фамилию" name="last-name" required>
+                                    <label for="last-name"><b>Фамилия*</b></label>
+                                </div>
+                            </div>
 
-/* Add a red text color and an "x" when the requirements are wrong */
-.invalid {
-    color: red;
-}
+                            <div class='row'>
+                                <div class='input-field col s12'>
+                                    <input class='validate' type="text" placeholder="Введите ваше имя" name="first-name" required>
+                                    <label for="first-name"><b>Имя*</b></label>
+                                </div>
+                            </div>
+                            
+                            <div class='row'>
+                                <div class='input-field col s12'>
+                                    <input class='validate' type="text" name="middle-name" placeholder="Введите ваше отчество (при наличии)">
+                                    <label for="middle-name"><b>Отчество</b></label>
+                                </div>
+                            </div>
 
-.invalid:before {
-    position: relative;
-    left: -25px;
-    content: "✖";
-}
-</style>
-</head>
-<body>
+                            <div class='row'>
+                                <div class='input-field col s12'>
+                                    <input class='validate' type='email' name='email' id='email' placeholder="Введите вашу эл. почту" required>
+                                    <label for='email'><b>Электронная почта*</b></label>
+                                </div>
+                            </div>
 
-<form action="/auth/sign-up" method="post" enctype="text/plain">
-  <div class="container">
-    <h1>Регистрация</h1>
-    <p>Пожалуйста, заполните эту форму, чтобы создать учетную запись.</p>
-    <hr>
-    
-    <label for="first-name"><b>Имя*</b></label>
-    <input type="text" placeholder="Введите ваше имя" name="first-name" required>
-    
-    <label for="last-name"><b>Фамилия*</b></label>
-    <input type="text" placeholder="Введите вашу фамилию" name="last-name" required>
-    
-    <label for="middle-name"><b>Отчество</b></label>
-    <input type="text" placeholder="Введите ваше отчество (при наличии)" name="middle-name">
+                            {{ range . }}
+                            <p class="error-pass">{{ .pass }}</p>
+                            {{ else }}
+                            {{ end }}
+                            
+                            <div class='row'>
+                                <div class='input-field col s12'>
+                                    <input type="password" id="psw" placeholder="Придумайте пароль" name="psw" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required>
+                                    <label for="psw"><b>Пароль*</b></label>
+                                </div>
+                            </div>
 
-    <label for="email"><b>Электронная почта*</b></label>
-    <input type="text" placeholder="Введите вашу эл. почту" name="email" required>
 
-    <p class="error-pass">{{ .error }}</p>
+                            <div id="message">
+                                <h3 class="titlemes">Пароль должен содержать следующее:</h3>
+                                <p id="letter" class="invalid"> <b>строчную</b> букву</p>
+                                <p id="capital" class="invalid"> <b>прописную(заглавную)</b> букву</p>
+                                <p id="number" class="invalid"> <b>цифру</b></p>
+                                <p id="length" class="invalid">минимум <b>8 знаков</b></p>
+                            </div> 
 
-    <label for="psw"><b>Пароль*</b></label>
-    <input type="password" id="psw" placeholder="Придумайте пароль" name="psw" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required>
-    
-    <div id="message">
-      <h3 class="titlemes">Пароль должен содержать следующее:</h3>
-      <p id="letter" class="invalid"> <b>строчную</b> букву</p>
-      <p id="capital" class="invalid"> <b>прописную(заглавную)</b> букву</p>
-      <p id="number" class="invalid"> <b>цифру</b></p>
-      <p id="length" class="invalid">минимум <b>8 знаков</b></p>
-    </div>  
+                            <div class='row'>
+                                <div class='input-field col s12'>
+                                    <input type="password" id="refresh_psw" placeholder="Повторите пароль" name="psw-repeat" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required>
+                                    <label for="psw-repeat"><b>Повторите пароль*</b></label>
+                                </div>
+                            </div>
 
-    <label for="psw-repeat"><b>Повторите пароль*</b></label>
-    <input type="password" placeholder="Повторите пароль" name="psw-repeat" required>
-    <hr>
-    <p>Создавая учетную запись, вы соглашаетесь с нашими <a href="#">Условиями конфиденциальности</a>.</p>
+                            <div id="id_user" name="id_user"></div>
 
-    <button type="submit" class="registerbtn">Зарегистрироваться</button>
-  </div>
-  
-  <div class="container signin">
-    <p>У вас уже есть аккаунт? <a href="/auth/login">Войти</a>.</p>
-  </div>
-  
-  
-</form>
+                            <div class="container signin">
+                                <p>Создавая учетную запись, вы соглашаетесь с нашими <a href="#">Условиями конфиденциальности</a>.</p>
+                            </div>
+                            
+                            <br/>
+                            <div class='row'>
+                                <button type='submit' name='btn_login' class='col s12 btn btn-large waves-effect indigo'>
+                                    Зарегистрироваться
+                                </button>
+                            </div>
+                        </form>
 
-<script>
-var myInput = document.getElementById("psw");
-var letter = document.getElementById("letter");
-var capital = document.getElementById("capital");
-var number = document.getElementById("number");
-var length = document.getElementById("length");
+                        <div class="container signin">
+                            <p>У вас уже есть аккаунт? <a href="/auth/login">Войти</a></p>
+                        </div>
+                        
+                    </div>
+                </div>
+            </center>
 
-// When the user clicks on the password field, show the message box
-myInput.onfocus = function() {
-    document.getElementById("message").style.display = "block";
-}
+            <div class="section"></div>
+            <div class="section"></div>
+        </main>
 
-// When the user clicks outside of the password field, hide the message box
-myInput.onblur = function() {
-    document.getElementById("message").style.display = "none";
-}
+        <script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/jquery/2.2.1/jquery.min.js"></script>
+        <script type="text/javascript"
+                src="https://cdnjs.cloudflare.com/ajax/libs/materialize/0.97.5/js/materialize.min.js"></script>
+                <script>
+                    var myInput = document.getElementById("psw");
+                    var letter = document.getElementById("letter");
+                    var capital = document.getElementById("capital");
+                    var number = document.getElementById("number");
+                    var length = document.getElementById("length");
+                    
+                    // When the user clicks on the password field, show the message box
+                    myInput.onfocus = function() {
+                        document.getElementById("message").style.display = "block";
+                    }
+                    
+                    // When the user clicks outside of the password field, hide the message box
+                    myInput.onblur = function() {
+                        document.getElementById("message").style.display = "none";
+                    }
+                    
+                    // When the user starts to type something inside the password field
+                    myInput.onkeyup = function() {
+                      // Validate lowercase letters
+                      var lowerCaseLetters = /[a-z]/g;
+                      if(myInput.value.match(lowerCaseLetters)) {  
+                        letter.classList.remove("invalid");
+                        letter.classList.add("valid");
+                      } else {
+                        letter.classList.remove("valid");
+                        letter.classList.add("invalid");
+                      }
+                      
+                      // Validate capital letters
+                      var upperCaseLetters = /[A-Z]/g;
+                      if(myInput.value.match(upperCaseLetters)) {  
+                        capital.classList.remove("invalid");
+                        capital.classList.add("valid");
+                      } else {
+                        capital.classList.remove("valid");
+                        capital.classList.add("invalid");
+                      }
+                    
+                      // Validate numbers
+                      var numbers = /[0-9]/g;
+                      if(myInput.value.match(numbers)) {  
+                        number.classList.remove("invalid");
+                        number.classList.add("valid");
+                      } else {
+                        number.classList.remove("valid");
+                        number.classList.add("invalid");
+                      }
+                      
+                      // Validate length
+                      if(myInput.value.length >= 8) {
+                        length.classList.remove("invalid");
+                        length.classList.add("valid");
+                      } else {
+                        length.classList.remove("valid");
+                        length.classList.add("invalid");
+                      }
+                    }
+                    </script>
+    </body>
 
-// When the user starts to type something inside the password field
-myInput.onkeyup = function() {
-  // Validate lowercase letters
-  var lowerCaseLetters = /[a-z]/g;
-  if(myInput.value.match(lowerCaseLetters)) {  
-    letter.classList.remove("invalid");
-    letter.classList.add("valid");
-  } else {
-    letter.classList.remove("valid");
-    letter.classList.add("invalid");
-  }
-  
-  // Validate capital letters
-  var upperCaseLetters = /[A-Z]/g;
-  if(myInput.value.match(upperCaseLetters)) {  
-    capital.classList.remove("invalid");
-    capital.classList.add("valid");
-  } else {
-    capital.classList.remove("valid");
-    capital.classList.add("invalid");
-  }
-
-  // Validate numbers
-  var numbers = /[0-9]/g;
-  if(myInput.value.match(numbers)) {  
-    number.classList.remove("invalid");
-    number.classList.add("valid");
-  } else {
-    number.classList.remove("valid");
-    number.classList.add("invalid");
-  }
-  
-  // Validate length
-  if(myInput.value.length >= 8) {
-    length.classList.remove("invalid");
-    length.classList.add("valid");
-  } else {
-    length.classList.remove("valid");
-    length.classList.add("invalid");
-  }
-}
-</script>
-
-</body>
 </html>
 {{ end }}

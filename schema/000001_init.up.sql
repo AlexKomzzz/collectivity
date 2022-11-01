@@ -18,7 +18,7 @@ CREATE TABLE authdata
     last_name       varchar(255)    not null                    , -- фамилия
     middle_name     varchar(255)                                , -- отчество
     password_hash   varchar(255)    not null                    ,
-    email           varchar(255)    not null unique             ,
+    email           varchar(255)    not null unique             
 );
 
 -- CREATE TABLE todo_lists

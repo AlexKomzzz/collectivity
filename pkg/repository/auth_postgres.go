@@ -88,8 +88,8 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 func (r *AuthPostgres) GetUserFromAuth(idUserAuth int) (app.User, error) {
 	var dataUser app.User
 
-	query := fmt.Sprintf("SELECT (first_name, last_name, middle_name, password_hash, email) FROM %s WHERE id=$1", DBauth)
-
+	query := fmt.Sprintf("SELECT (first_name, last_name, middle_name, email, password_hash) FROM %s WHERE id=$1", DBauth)
+	logrus.Println("id = ", idUserAuth)
 	err := r.db.Get(&dataUser, query, idUserAuth)
 	if err != nil {
 		return dataUser, err

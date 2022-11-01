@@ -105,23 +105,23 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 		}
 	}
 
-	//logrus.Printf("dataUser: %v", dataUser)
+	// logrus.Printf("dataUser: %v", dataUser)
 
 	// создание пользователя в БД
 	idUser, err := h.service.CreateUserByAuth(&dataUser, passRepeat)
 	if err != nil {
 		if err.Error() == "пароли не совпадают" {
+			logrus.Println("несовпадение паролей при регистации.", err)
 			c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-				"error": err,
+				"pass": err,
 			})
-			// c.Redirect(http.StatusTemporaryRedirect, "/auth/sign-form?error=пароли%20не%20совпадают")
-			// c.Redirect(http.StatusTemporaryRedirect, "/test")
-
 		} else {
+			logrus.Println("ошибка при создании пользователя в БД authdata: ", err)
 			newErrorResponse(c, http.StatusInternalServerError, err.Error())
 		}
 		return
 	}
+	// logrus.Printf("idUser: %d", idUser)
 
 	// генерация токена для подтверждения почты
 	token, err := h.service.GenerateJWTtoEmail(idUser)
@@ -133,8 +133,11 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 		// })
 		return
 	}
+	// logrus.Printf("token: %s", token)
+
 	// формирование ссылки для отправки, в которой содержится токен
 	URL := fmt.Sprintf("%s/auth/sign-add?token=%s&email=%s", viper.GetString("url"), url.PathEscape(token), url.PathEscape(dataUser.Email))
+	logrus.Printf("URL: %s", URL)
 
 	// текст письма
 	msg := fmt.Sprintf("To: %s\r\n"+
@@ -440,7 +443,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// конвертируем idUser в числовое представление из строкового
 	idUser, err := h.service.ConvIdUser(idUserStr)
 	if err != nil {
-		logrus.Println("ошибка конвертации isUser из string в int: ", err)
+		logrus.Println("ошибка конвертации idUser из string в int при восстановлении пароля: ", err)
 		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}

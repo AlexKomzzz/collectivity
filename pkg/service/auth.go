@@ -13,6 +13,7 @@ import (
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/sirupsen/logrus"
 )
 
 const SOLT = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
@@ -82,11 +83,12 @@ func (service *AuthService) CreateUser(user *app.User) (int, error) {
 // хэширование и проверка паролей на соответсвие
 func (service *AuthService) CheckPass(psw, refreshPsw *string) error {
 	// захешим пароли
+	// logrus.Printf("psw: %s, psw_double: %s", *psw, *psw)
 	*psw = generatePasswordHash(*psw)
 	*refreshPsw = generatePasswordHash(*refreshPsw)
 
 	// Сравним переданные пароли
-	if psw != refreshPsw {
+	if *psw != *refreshPsw {
 		return errors.New("пароли не совпадают")
 	}
 
@@ -215,11 +217,16 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 	// Настройка аутентификации отправителя
 	// auth := sasl.NewPlainClient("", emailAPI, passwordAPI)
 	auth := smtp.PlainAuth("", emailAPI, passwordAPI, host)
+	// logrus.Println("auth: ", auth)
+	// logrus.Println("address: ", address)
+	// logrus.Println("emailAPI: ", emailAPI)
 
 	// список рассылки
 	to := []string{emailUser}
-
+	logrus.Println("send mes START")
 	err := smtp.SendMail(address, auth, emailAPI, to, []byte(msg))
+	logrus.Println("send mes OK")
+
 	if err != nil {
 		return err
 	}

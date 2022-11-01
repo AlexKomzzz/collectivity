@@ -1,5 +1,7 @@
 package handler
 
+// https://console.cloud.google.com/apis/credentials?project=my-project-id-365820
+
 import (
 	"crypto/rand"
 	"encoding/base64"
@@ -135,6 +137,7 @@ func getAccessTokenFromGoogle(c *gin.Context) (string, error) {
 	// Exchange преобразует 'code' авторизации в токен.
 	token, err := googleOauthConfig.Exchange(c, c.Request.FormValue("code"))
 	if err != nil {
+		logrus.Println("ошибка получения токена")
 		return "", fmt.Errorf("code exchange wrong: %s", err.Error())
 	}
 	return token.AccessToken, nil

@@ -49,8 +49,10 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		})
 
 		// отправка формы для создания пользователя
-		auth.StaticFile("/sign-form", "./web/templates/forma_auth.html")
-		// auth.GET("/sign-form", h.formAuth)
+		// auth.StaticFile("/sign-form", "./web/templates/forma_auth.html")
+		auth.GET("/sign-form", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "forma_auth.html", gin.H{})
+		})
 
 		// получение данных при создании нового пользователя, запись в БД регистрации, запрос на подтверждение email
 		auth.POST("/sign-up", h.signUp)
@@ -64,8 +66,8 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		{
 			// форма восстановления пароля recovery-pass-form
 			// auth.StaticFile("/recovery-pass-form", "./web/templates/recovery_pass.html")
-			pass.POST("/recovery-pass-form", func(c *gin.Context) {
-				c.HTML(http.StatusOK, "recovery_pass.html", gin.H{})
+			pass.GET("/new-form", func(c *gin.Context) {
+				c.HTML(http.StatusOK, "new_pass_email.html", gin.H{})
 			})
 			// определение пользователя по email
 			pass.POST("/definition-user", h.definitionUser)

@@ -1,5 +1,5 @@
 DROP TABLE users;
-DROP TABLE authdata;
+-- DROP TABLE authdata;
 
 -- DROP TABLE lists_items;
 

@@ -47,7 +47,7 @@
         <main>
             <center>
                 {{ range . }}
-                <div class="error_title">{{ .error }}</div>
+                <div class="error_title">{{ . }}</div>
                 {{ else }}
                 {{ end }}
                 <div class="section"></div>
@@ -74,7 +74,7 @@
                                     <label for='password'>Введи ваш пароль</label>
                                 </div>
                                 <label style='float: right;'>
-                                    <a class='pink-text' href='/auth/pass/recovery-pass-form'><b>Забыли пароль?</b></a>
+                                    <a class='pink-text' href='/auth/pass/new-form'><b>Забыли пароль?</b></a>
                                 </label>
                             </div>
 
