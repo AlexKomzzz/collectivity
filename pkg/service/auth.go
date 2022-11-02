@@ -14,6 +14,7 @@ import (
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
 	"github.com/dgrijalva/jwt-go"
 	"github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 )
 
 const SOLT = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
@@ -206,12 +207,8 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 	// почта от куда отправляется ссылка
 	emailAPI := os.Getenv("emailAddr")
 	passwordAPI := os.Getenv("SMTPpwd")
-	// emailAPI := "komalex203@gmail.com"
-	// passwordAPI := ""
-	// host := "smtp.gmail.com"
-	host := "smtp.yandex.ru"
-	// port := "587"
-	port := "465"
+	host := viper.GetString("email.host")
+	port := viper.GetString("email.port")
 	address := host + ":" + port
 
 	// Настройка аутентификации отправителя

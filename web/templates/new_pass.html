@@ -97,13 +97,24 @@
                     <div class="z-depth-1 grey lighten-4 row"
                         style="display: inline-block; padding: 32px 48px 0px 48px; border: 1px solid #EEE;">
 
-                        <div class="error_title">{{ .error }}</div>
+                        {{ if .err }}
+                        <div class="error_title">{{ .msgErr }}</div>
+                        {{ else }}
+                        {{ end }}
                         
                         <form class="col s12" method="post" action="/auth/pass/recovery-pass" enctype="text/plain">
                             <div class='row'>
                                 <div class='col s12'>
                                 </div>
                             </div>
+
+                            {{ if .id }}
+                            <!-- Отправлять id в запросе -->
+                            <div class='input-field col s12'>
+                                <div id="id_user" type="text" name="id_user">  {{ .idUser }}</div>
+                            </div>
+                            {{ else }}
+                            {{ end }}
 
                             <div class='row'>
                                 <div class='input-field col s12'>
@@ -123,11 +134,9 @@
                             <div class='row'>
                                 <div class='input-field col s12'>
                                     <input type="password" id="refresh_psw" placeholder="Повторите пароль" name="refresh_psw" pattern="(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{8,}" title="Must contain at least one number and one uppercase and lowercase letter, and at least 8 or more characters" required>
-                                    <label for="psw"><b></b></label>
+                                    <label for="refresh_psw"><b></b></label>
                                 </div>
                             </div>
-
-                            <div id="id_user" name="id_user"></div>
                             
                             <br/>
                             <div class='row'>
@@ -140,7 +149,7 @@
                     </div>
                 </div>
                 <div class="container signin">
-                    <p>Я помню пароль. <a href="/auth/login">Войти</a>.</p>
+                    <p>Я помню пароль. <a href="/auth/login">Войти</a></p>
                 </div>
             </center>
 

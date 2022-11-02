@@ -113,11 +113,11 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 		if err.Error() == "пароли не совпадают" {
 			logrus.Println("несовпадение паролей при регистации.", err)
 			c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-				"pass": err,
+				"pass": true,
 			})
 		} else {
 			logrus.Println("ошибка при создании пользователя в БД authdata: ", err)
-			newErrorResponse(c, http.StatusInternalServerError, err.Error())
+			errorServerResponse(c, err)
 		}
 		return
 	}
@@ -290,7 +290,7 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	if err != nil {
 		logrus.Println(err)
 		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-			"error": err,
+			"error": "Ошибка запроса. Повторите процедуру.",
 		})
 		return
 	}
@@ -303,6 +303,13 @@ func (h *Handler) definitionUser(c *gin.Context) {
 		paramsSl := strings.Split(string(params), "=")
 
 		if paramsSl[0] == "email" {
+			if paramsSl[1] == "" {
+				logrus.Println("не передан email для восстановления пароля")
+				c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+					"error": "Ошибка запроса. Повторите процедуру.",
+				})
+				return
+			}
 			emailUser = paramsSl[1]
 			// log.Println(paramsSl[1])
 		}
@@ -314,12 +321,13 @@ func (h *Handler) definitionUser(c *gin.Context) {
 		logrus.Println(err)
 		if err.Error() == "sql: no rows in result set" {
 			c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-				"error": "Пользователя с такой почтой не существует.",
+				"error": "Пользователя с таким адресом электронной почты не существует.",
 			})
 		} else {
-			c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-				"error": err,
-			})
+			errorServerResponse(c, err)
+			// c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+			// 	"error": err,
+			// })
 		}
 		return
 	}
@@ -328,14 +336,16 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	token, err := h.service.GenerateJWTtoEmail(idUser)
 	if err != nil {
 		logrus.Println("ошибка при генерации токена для восстановления пароля: ", err)
-		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-			"error": err,
-		})
+		errorServerResponse(c, err)
+		// c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+		// 	"error": err,
+		// })
 		return
 	}
 
 	// формирование URL
 	URL := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s", viper.GetString("url"), url.PathEscape(token))
+	logrus.Printf("URL: %s", URL)
 
 	// текст письма
 	msg := fmt.Sprintf("To: %s\r\n"+
@@ -346,10 +356,11 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	// отпрвка сообщения на почту пользователя с ссылкой для восстановления пароля
 	err = h.service.SendMessageByMail(emailUser, URL, msg)
 	if err != nil {
-		logrus.Println(err)
-		c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-			"error": err,
-		})
+		logrus.Println("ошибка при отправке письма на почту пользователя при восстановлении пароля: ", err)
+		errorServerResponse(c, err)
+		// c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
+		// 	"error": err,
+		// })
 		return
 	}
 
@@ -367,7 +378,9 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	token := c.Query("token")
 	if token == "" {
 		logrus.Println("отсутствие токена в URL при восстановлении пароля")
-		newErrorResponse(c, http.StatusBadRequest, "empty auth token")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
 		return
 	}
 
@@ -375,13 +388,16 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	idUser, err := h.service.ParseTokenEmail(token)
 	if err != nil {
 		logrus.Println(err)
-		newErrorResponse(c, http.StatusServiceUnavailable, err.Error())
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
 		return
 	}
 
 	// отправляем форму для нового пароля
 	c.HTML(http.StatusOK, "new_pass.html", gin.H{
-		"id": idUser,
+		"id":     true,
+		"idUser": idUser,
 	})
 }
 
@@ -402,7 +418,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
 		logrus.Println(err)
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		newErrorResponse(c, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -413,29 +429,41 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		// делим строки по знаку равенства
 		paramsSl := strings.Split(string(params), "=")
 
-		if paramsSl[0] == "psw" {
+		if paramsSl[0] == "id_user" {
 			if paramsSl[1] == "" {
-				logrus.Println("не передан пароль")
-				newErrorResponse(c, http.StatusBadRequest, "Повторите попытку")
+				logrus.Println("не передан idUser при восстановлении пароля")
+				c.HTML(http.StatusBadRequest, "login.html", gin.H{
+					"error": "Ошибка запроса. Повторите процедуру.",
+				})
 				return
 			}
-			psw = paramsSl[1]
+			idUserStr = paramsSl[1]
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "refresh_psw" {
 			if paramsSl[1] == "" {
-				logrus.Println("не передан повторный пароль")
-				newErrorResponse(c, http.StatusBadRequest, "Повторите попытку")
+				logrus.Println("не передан повторный пароль для изменения")
+				c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
+					"id":     true,
+					"idUser": idUserStr,
+					"err":    true,
+					"msgErr": "Повторите новый пароль.",
+				})
 				return
 			}
 			refreshPsw = paramsSl[1]
 			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "id_user" {
+		} else if paramsSl[0] == "psw" {
 			if paramsSl[1] == "" {
-				logrus.Println("не передан idUser при восстановлении пароля")
-				newErrorResponse(c, http.StatusBadRequest, "Повторите попытку")
+				logrus.Println("не передан новый пароль для изменения")
+				c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
+					"id":     true,
+					"idUser": idUserStr,
+					"err":    true,
+					"msgErr": "Вы не указали новый пароль.",
+				})
 				return
 			}
-			idUserStr = paramsSl[1]
+			psw = paramsSl[1]
 			// log.Println(paramsSl[1])
 		}
 	}
@@ -444,7 +472,9 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	idUser, err := h.service.ConvIdUser(idUserStr)
 	if err != nil {
 		logrus.Println("ошибка конвертации idUser из string в int при восстановлении пароля: ", err)
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
 		return
 	}
 
@@ -452,7 +482,12 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	err = h.service.CheckPass(&psw, &refreshPsw)
 	if err != nil {
 		logrus.Println(err)
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
+		c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
+			"id":     true,
+			"idUser": idUserStr,
+			"err":    true,
+			"msgErr": "Пароли не совпадают",
+		})
 		return
 	}
 
@@ -460,17 +495,14 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	err = h.service.UpdatePass(idUser, psw)
 	if err != nil {
 		logrus.Println(err)
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		errorServerResponse(c, err)
 		return
 	}
 
 	// сгенерируем JWT
 	token, err := h.service.GenerateJWT_API(idUser)
 	if err != nil {
-		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
-			"error": err,
-		})
-		//newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		errorServerResponse(c, err)
 		return
 	}
 

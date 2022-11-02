@@ -11,3 +11,9 @@ db:
   host: "db"
   port: "5432"
   dbname: "postgres"
+
+email:
+  host: "smtp.yandex.ru"
+  #host: "komalex203@gmail.com"
+  port: "465"
+  #port: "587"

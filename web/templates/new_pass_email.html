@@ -57,7 +57,10 @@
                     <div class="z-depth-1 grey lighten-4 row"
                         style="display: inline-block; padding: 32px 48px 0px 48px; border: 1px solid #EEE;">
 
-                        <div class="error_title">{{ .error }}</div>
+                        {{ range . }}
+                        <div class="error_title">{{ . }}</div>
+                        {{ else }}
+                        {{ end }}
                         
                         <form class="col s12" method="post" action="/auth/pass/definition-user" enctype="text/plain">
                             <div class='row'>
@@ -83,7 +86,7 @@
                     </div>
                 </div>
                 <div class="container signin">
-                    <p>Я помню пароль. <a href="/auth/login">Войти</a>.</p>
+                    <p>Я помню пароль. <a href="/auth/login">Войти</a></p>
                 </div>
             </center>
 
