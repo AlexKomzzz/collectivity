@@ -105,7 +105,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 		}
 	}
 
-	// logrus.Printf("dataUser: %v", dataUser)
+	// Проверка на отсутствие пользователя с таким email в БД
 
 	// создание пользователя в БД
 	idUser, err := h.service.CreateUserByAuth(&dataUser, passRepeat)
@@ -204,6 +204,7 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 		errorServerResponse(c, err)
 		return
 	}
+	logrus.Println("Создан новый пользователь: ", idUser)
 
 	// генерация JWT по id
 	token, err := h.service.GenerateJWT_API(idUser)
@@ -394,9 +395,12 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 		return
 	}
 
+	URLrequest := fmt.Sprintf("/auth/pass/recovery-pass?token=%s", url.PathEscape(token))
+
 	// отправляем форму для нового пароля
 	c.HTML(http.StatusOK, "new_pass.html", gin.H{
-		"id":     true,
+		//	"id":     true,
+		"URL":    URLrequest,
 		"idUser": idUser,
 	})
 }

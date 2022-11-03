@@ -87,10 +87,14 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 // получение данных о пользователе (с неподтвержденным email) из БД authdata
 func (r *AuthPostgres) GetUserFromAuth(idUserAuth int) (app.User, error) {
 	var dataUser app.User
+	// dataUser := app.User{
+	// 	Id: idUserAuth,
+	// }
 
-	query := fmt.Sprintf("SELECT (first_name, last_name, middle_name, email, password_hash) FROM %s WHERE id=$1", DBauth)
-	logrus.Println("id = ", idUserAuth)
+	query := fmt.Sprintf("SELECT first_name, last_name, middle_name, email, password_hash FROM %s WHERE id=$1", DBauth)
+	// logrus.Println("id = ", idUserAuth)
 	err := r.db.Get(&dataUser, query, idUserAuth)
+	// logrus.Println("dataUser = ", dataUser)
 	if err != nil {
 		return dataUser, err
 	}
