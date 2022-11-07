@@ -14,6 +14,10 @@ type Authorization interface {
 	CreateUser(user *app.User) (int, error)
 	// функция создания Пользователя при авторизации через Google или Яндекс
 	CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
+	// Проверка на отсутствие пользователя с таким email в БД
+	CheckUserByEmail(email string) (bool, error)
+	// хэширование и проверка паролей на соответсвие
+	CheckPass(psw, refreshPsw *string) error
 	// определение idUser по email
 	GetUserByEmail(email string) (int, error)
 	// получение данных о пользователе (с неподтвержденным email) из БД authdata
@@ -35,12 +39,8 @@ type Authorization interface {
 	ParseTokenEmail(accesstoken string) (int, error)
 	// отправка сообщения пользователю на почту для передачи ссылки
 	SendMessageByMail(emailUser, url, msg string) error
-	// хэширование и проверка паролей на соответсвие
-	CheckPass(psw, refreshPsw *string) error
 	// обновление пароля у пользователя
 	UpdatePass(idUser int, newHashPsw string) error
-	// конвертация idUser из строки в число
-	ConvIdUser(idUserStr string) (int, error)
 	// сравнение email полученного и сохраненного в БД
 	ComparisonEmail(emailUser, emailURL string) error
 }

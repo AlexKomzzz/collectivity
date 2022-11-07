@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 
 	app "github.com/AlexKomzzz/collectivity"
@@ -72,6 +73,15 @@ func (r *AuthPostgres) CreateUserAPI(typeAPI, idAPI, firstName, lastName, email 
 	return idUser, nil
 }
 
+// проверка на отсутствие пользователя с таким email в БД
+func (r *AuthPostgres) CheckUserByEmail(email string) (bool, error) {
+	var yes bool
+	query := fmt.Sprintf("SELECT EXISTS (SELECT id FROM %s WHERE email=$1)", DBusers)
+	err := r.db.Get(&yes, query, email)
+
+	return yes, err
+}
+
 // определение id пользователя по email и паролю
 func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 	query := "SELECT id FROM users WHERE email=$1 AND password_hash=$2"
@@ -117,11 +127,24 @@ func (r *AuthPostgres) GetUserFromAuth(idUserAuth int) (app.User, error) {
 
 // определение id пользователя по email
 func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
-	query := "SELECT id FROM users WHERE email=$1"
-	var id int
-	err := r.db.Get(&id, query, email)
+	var yes bool
+	// проверка на наличие пользователя в БД
+	query := fmt.Sprintf("SELECT EXISTS (SELECT id FROM %s WHERE email=$1)", DBusers)
+	err := r.db.Get(&yes, query, email)
 	if err != nil {
-		return 0, err
+		return -1, err
+	}
+
+	// если пользователя нет
+	if !yes {
+		return -1, errors.New("sql: no rows in result set")
+	}
+
+	queryGet := "SELECT id FROM users WHERE email=$1"
+	var id int
+	err = r.db.Get(&id, queryGet, email)
+	if err != nil {
+		return -1, err
 	}
 
 	return id, nil
@@ -130,7 +153,7 @@ func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 // обновление пароля у пользователя
 func (service *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
 
-	query := "UPDATE password_hash=$1 FROM users WHERE id=$2" // ПРОВЕРИТЬ!!!!!
+	query := "UPDATE users SET password_hash=$1 WHERE id=$2"
 	_, err := service.db.Exec(query, newHashPsw, idUser)
 	if err != nil {
 		return err

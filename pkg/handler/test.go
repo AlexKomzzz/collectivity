@@ -10,10 +10,8 @@ type Resp struct {
 }
 
 func (h *Handler) test(c *gin.Context) {
-	// err := h.service.SendMessage("komalex203@gmail.com", "ссылка")
-	// if err != nil {
-	// 	logrus.Println(err)
-	// 	newErrorResponse(c, http.StatusServiceUnavailable, err.Error())
-	// 	return
-	// }
+	// c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
+	// 	"pass":   true,
+	// 	"msgErr": "Ошибка запроса. Введите, пожалуйста, все данные снова.",
+	// })
 }

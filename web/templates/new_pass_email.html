@@ -51,16 +51,15 @@
                 <p>Пожалуйста, укажите вашу электронную почту.</p> 
                 <p>На неё мы вышлем ссылку для прохождения процедуры по восстановлению пароля.</p>
                 <hr>
+                {{ range . }}
+                    <div class="error_title">{{ . }}</div>
+                {{ else }}
+                {{ end }}
             </div>
             <center>
                 <div class="container">
                     <div class="z-depth-1 grey lighten-4 row"
                         style="display: inline-block; padding: 32px 48px 0px 48px; border: 1px solid #EEE;">
-
-                        {{ range . }}
-                        <div class="error_title">{{ . }}</div>
-                        {{ else }}
-                        {{ end }}
                         
                         <form class="col s12" method="post" action="/auth/pass/definition-user" enctype="text/plain">
                             <div class='row'>
