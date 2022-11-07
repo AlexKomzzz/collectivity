@@ -1,4 +1,4 @@
-{{define "start_list.html"}}
+{{define "go_email.html"}}
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,11 +10,7 @@
 <body>
 	<div class="container">
 		<br><br>
-		{{ range . }}
-			<p> Hello, {{ . }}</p>
-		{{ else }}
-			<p> Hello, Alex</p>
-		{{ end }}
+			<p> На указанную Вами электронную почту направленна ссылка для прохождения процедуры {{ . }}. Проверьте входящие сообщения и спам.</p>
 	</div>
 </body>
 </html>

@@ -33,10 +33,11 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	mux.GET("/test", h.test)
 
 	// основная страница сайта
-	api := mux.Group("/", h.userIdentity)
-	{
-		api.StaticFile("/", "./web/templates/start_list.html")
-	}
+	mux.GET("/", h.startList)
+	// api := mux.Group("/", h.userIdentity)
+	// {
+	// 	api.StaticFile("/", "./web/templates/start_list.html")
+	// }
 
 	// авторизация и аутентификация
 	auth := mux.Group("/auth") // Группа аутентификации
@@ -44,17 +45,37 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		// Войти в систему
 		// auth.StaticFile("/login-form", "./web/templates/login.html")
 		auth.GET("/login", func(c *gin.Context) {
-			c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+			c.HTML(http.StatusOK, "login.html", gin.H{})
 		})
 
 		// отправка формы для создания пользователя
 		// auth.StaticFile("/sign-form", "./web/templates/forma_auth.html")
-		auth.GET("/sign-form", h.formAuth)
+		auth.GET("/sign-form", func(c *gin.Context) {
+			c.HTML(http.StatusOK, "forma_auth.html", gin.H{})
+		})
 
+		// получение данных при создании нового пользователя, запись в БД регистрации, запрос на подтверждение email
 		auth.POST("/sign-up", h.signUp)
+		// подтверждение email, проверка токена из URL, добавление пользователя в БД
+		auth.GET("/sign-add", h.signAdd)
+		// аутентификация пользователя, выдача JWT
 		auth.POST("/sign-in", h.signIn)
-		// сброс пароля
-		auth.GET("/refresh-pass", h.test)
+
+		// восстановление пароля
+		pass := auth.Group("/pass")
+		{
+			// форма восстановления пароля recovery-pass-form
+			// auth.StaticFile("/recovery-pass-form", "./web/templates/recovery_pass.html")
+			pass.GET("/new-form", func(c *gin.Context) {
+				c.HTML(http.StatusOK, "new_pass_email.html", gin.H{})
+			})
+			// определение пользователя по email
+			pass.POST("/definition-user", h.definitionUser)
+			// определение пользователя по JWT
+			pass.GET("/definition-userJWT", h.definitionUserJWT)
+			// восстановление пароля
+			pass.POST("/recovery-pass", h.recoveryPass)
+		}
 
 		// идентификация через google
 		google := auth.Group("/google")

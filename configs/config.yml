@@ -3,6 +3,7 @@ host: "localhost"
 GOOGLE_OAUTH_CLIENT_ID: "995350173631-6ffgi1nkh711d7g23dq7no9vgvl536r5.apps.googleusercontent.com"
 YANDEX_OAUTH_CLIENT_ID: "fe3918e6e2ee4e68b1391c55e117ebc5"
 domain: "localhost"
+url: "http://localhost:8080"
 
 db:
   username: "postgres"
@@ -10,3 +11,9 @@ db:
   host: "db"
   port: "5432"
   dbname: "postgres"
+
+email:
+  host: "smtp.yandex.ru"
+  #host: "komalex203@gmail.com"
+  port: "465"
+  #port: "587"

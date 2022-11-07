@@ -8,7 +8,17 @@ CREATE TABLE users
     middle_name     varchar(255)                                , -- отчество
     password_hash   varchar(255)                                ,
     email           varchar(255)    not null unique             ,
-    role            varchar(255)                                  -- роль (напр. Админ)
+    role            varchar(255)                                  -- роль (напр. admin)
+);
+
+CREATE TABLE authdata
+(
+    id              serial          not null unique  primary key,
+    first_name      varchar(255)    not null                    , -- имя
+    last_name       varchar(255)    not null                    , -- фамилия
+    middle_name     varchar(255)                                , -- отчество
+    password_hash   varchar(255)    not null                    ,
+    email           varchar(255)    not null unique             
 );
 
 -- CREATE TABLE todo_lists

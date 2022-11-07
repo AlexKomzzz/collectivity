@@ -1,5 +1,7 @@
 package handler
 
+// https://console.cloud.google.com/apis/credentials?project=my-project-id-365820
+
 import (
 	"crypto/rand"
 	"encoding/base64"
@@ -52,13 +54,19 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	// Сравним cookie
 	oauthState, err := c.Cookie("oauthstate")
 	if err != nil {
-		newErrorResponse(c, http.StatusBadRequest, "Cookie invalid: "+err.Error())
+		logrus.Println("ошибка при получении куков в oauthGoogleCallback", err)
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		// newErrorResponse(c, http.StatusBadRequest, "Cookie invalid: "+err.Error())
 		return
 	}
 
 	if c.Request.FormValue("state") != oauthState {
 		logrus.Println("invalid oauth google state")
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
@@ -71,8 +79,10 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 
 	data, err := getUserDataFromGoogle(c)
 	if err != nil {
-		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		logrus.Println(err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
@@ -83,17 +93,20 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	// создание пользователя в БД (или обновление, если уже создан)
 	idUser, err := h.service.CreateUserAPI("google", userData.Id, userData.FirstName, userData.LastName, userData.Email)
 	if err != nil {
-		logrus.Println(err.Error())
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		logrus.Println(err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
 	// получение JWT по id пользователя
 	token, err := h.service.GenerateJWT_API(idUser)
 	if err != nil {
-		logrus.Println(err.Error())
-		// c.HTML(error.html)
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login-form")
+		logrus.Println(err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
 		return
 	}
 
@@ -124,6 +137,7 @@ func getAccessTokenFromGoogle(c *gin.Context) (string, error) {
 	// Exchange преобразует 'code' авторизации в токен.
 	token, err := googleOauthConfig.Exchange(c, c.Request.FormValue("code"))
 	if err != nil {
+		logrus.Println("ошибка получения токена")
 		return "", fmt.Errorf("code exchange wrong: %s", err.Error())
 	}
 	return token.AccessToken, nil

@@ -16,6 +16,11 @@ func newErrorResponse(c *gin.Context, statusCode int, message string) { // Ф-я
 	c.AbortWithStatusJSON(statusCode, errorResponse{Message: message})
 }
 
+func errorServerResponse(c *gin.Context, err error) { // Ф-я обработчик ошибки
+	logrus.Error(err)
+	c.AbortWithStatusJSON(http.StatusInternalServerError, errorResponse{Message: "ошибка сервера, пожалуйста, обновите страницу"})
+}
+
 func Response404(c *gin.Context) {
 	logrus.Println("Error 404. Not found. Invalid url")
 	c.HTML(http.StatusNotFound, "error.html", gin.H{
