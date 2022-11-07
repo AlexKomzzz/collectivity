@@ -13,6 +13,8 @@ type Authorization interface {
 	CreateUserByAuth(user *app.User) (int, error)
 	// создание пользователя в БД при авторизации через Google  или Яндекс
 	CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
+	// проверка на отсутствие пользователя с таким email в БД
+	CheckUserByEmail(email string) (bool, error)
 	// определение id пользователя по email и паролю
 	GetUser(email, password string) (int, error)
 	// получение данных о пользователе (с неподтвержденным email) из БД authdata

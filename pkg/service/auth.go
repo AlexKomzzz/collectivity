@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
-	"strconv"
 	"strings"
 	"time"
 
@@ -79,6 +78,11 @@ func (service *AuthService) CreateUserByAuth(user *app.User, passRepeat string) 
 // возвращяет id созданного пользователя из таблицы users
 func (service *AuthService) CreateUser(user *app.User) (int, error) {
 	return service.repos.CreateUser(user)
+}
+
+// Проверка на отсутствие пользователя с таким email в БД
+func (service *AuthService) CheckUserByEmail(email string) (bool, error) {
+	return service.repos.CheckUserByEmail(email)
 }
 
 // хэширование и проверка паролей на соответсвие
@@ -235,12 +239,6 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 func (service *AuthService) UpdatePass(idUser int, newHashPsw string) error {
 
 	return service.repos.UpdatePass(idUser, newHashPsw)
-}
-
-// конвертация idUser из строки в число
-func (service *AuthService) ConvIdUser(idUserStr string) (int, error) {
-
-	return strconv.Atoi(idUserStr)
 }
 
 // сравнение email полученного и сохраненного в БД

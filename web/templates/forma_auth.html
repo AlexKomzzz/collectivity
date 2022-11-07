@@ -96,6 +96,11 @@
                 <div class="container">
                     <div class="z-depth-1 grey lighten-4 row"
                         style="display: inline-block; padding: 32px 48px 0px 48px; border: 1px solid #EEE;">
+
+                        {{ if .err }}
+                        <p class="error_title">{{ .msgErr }}</p>
+                        {{ else }}
+                        {{ end }}
                       
                         <form class="col s12" method="post" action="/auth/sign-up" enctype="text/plain">
                             <div class='row'>
@@ -131,8 +136,8 @@
                                 </div>
                             </div>
 
-                            {{ range . }}
-                            <p class="error-pass">Пароли не совпадают</p>
+                            {{ if .pass }}
+                            <p class="error-title">Пароли не совпадают</p>
                             {{ else }}
                             {{ end }}
                             
