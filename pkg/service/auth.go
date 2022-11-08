@@ -129,6 +129,11 @@ func (service *AuthService) GenerateJWT(email, password string) (string, error) 
 	if err != nil {
 		return "", err
 	}
+	if idUser == -1 {
+		return "", errors.New("нет пользователя")
+	} else if idUser == -2 {
+		return "", errors.New("пароль")
+	}
 
 	return generateJWT(idUser)
 }

@@ -312,12 +312,16 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 
 	token, err := h.service.GenerateJWT(dataUser.Email, dataUser.Password)
 	if err != nil {
-		logrus.Println("ошибка при генерации JWT в signIn: ", err)
-		if err.Error() == "sql: no rows in result set" {
+		if err.Error() == "нет пользователя" {
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
-				"error": "Такого пользователя не существует.\nПроверьте правильность введенных данных или зарегистрируйтесь",
+				"error": "Пользователя с такой эл. почтой не существует. Проверьте правильность введенных данных или зарегистрируйтесь.",
+			})
+		} else if err.Error() == "пароль" {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Неверный пароль. Попробуйте снова.",
 			})
 		} else {
+			logrus.Println("ошибка при генерации JWT в signIn: ", err)
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
 				"error": err,
 			})

@@ -83,13 +83,88 @@ func (r *AuthPostgres) CheckUserByEmail(email string) (bool, error) {
 }
 
 // определение id пользователя по email и паролю
+// id = -1 значит пользователя с данным email нет в БД
+// id = -2 значит неправильно введен пароль
 func (r *AuthPostgres) GetUser(email, password string) (int, error) {
-	query := "SELECT id FROM users WHERE email=$1 AND password_hash=$2"
+
+	var yes bool
 	var id int
-	err := r.db.Get(&id, query, email, password)
+
+	// открытие транзакции
+	tx, err := r.db.Begin()
 	if err != nil {
+		tx.Rollback()
 		return 0, err
 	}
+	defer tx.Rollback()
+
+	queryYes := fmt.Sprintf("SELECT EXISTS (SELECT id FROM %s WHERE email=$1 AND password_hash=$2)", DBusers)
+
+	// проверка на наличие пользователя в БД
+	row := tx.QueryRow(queryYes, email, password)
+	err = row.Scan(&yes)
+	if err != nil {
+		tx.Rollback()
+		return 0, err
+	}
+
+	// при отсутствии данного пользователя, проверяется отдельно наличие пользователя по email и по паролю
+	if !yes {
+		var yesEmail bool
+
+		// проверка на наличие пользователя в БД c таким email
+		queryEmail := fmt.Sprintf("SELECT EXISTS (SELECT id FROM %s WHERE email=$1)", DBusers)
+		row := tx.QueryRow(queryEmail, email)
+		err = row.Scan(&yesEmail)
+		if err != nil {
+			tx.Rollback()
+			return 0, err
+		}
+
+		if !yesEmail {
+			// значит пользователя с данным емейл нет в БД
+			tx.Rollback()
+			return -1, nil
+		} else {
+			//  проверка по паролю
+			var yesPass bool
+
+			queryPass := fmt.Sprintf("SELECT EXISTS (SELECT id FROM %s WHERE password_hash=$1)", DBusers)
+			row := tx.QueryRow(queryPass, password)
+			err = row.Scan(&yesPass)
+			if err != nil {
+				tx.Rollback()
+				return 0, err
+			}
+
+			if !yesPass {
+				// значит неправильно набран пароль
+				tx.Rollback()
+				return -2, nil
+			} else {
+				// такого случая быть не должно
+				tx.Rollback()
+				return 0, errors.New("ошибка БД при проверке пользователя по email и паролю")
+			}
+		}
+
+	} else {
+		query := fmt.Sprintf("SELECT id FROM %s WHERE email=$1 AND password_hash=$2", DBusers)
+		row := tx.QueryRow(query, email, password)
+		err := row.Scan(&id)
+		if err != nil {
+			tx.Rollback()
+			return 0, err
+		}
+	}
+
+	// проверка
+	if id == 0 {
+		tx.Rollback()
+		logrus.Println("ошибка: при определении id пользователя через email и pass")
+		return 0, errors.New("непредвиденная ошибка при запросе к БД")
+	}
+	tx.Commit()
 
 	return id, nil
 }
