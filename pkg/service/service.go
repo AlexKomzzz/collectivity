@@ -6,6 +6,8 @@ import (
 )
 
 type Authorization interface {
+	// создание админа
+	CreateAdmin() error
 	// создание пользователя в БД регистрации (при создании нового пользователя, когда эл. почта не потверждена)
 	// возвращяет id созданного пользователя из таблицы authdata
 	CreateUserByAuth(user *app.User, passRepeat string) (int, error)

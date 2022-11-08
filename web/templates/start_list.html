@@ -10,10 +10,10 @@
 <body>
 	<div class="container">
 		<br><br>
-		{{ range . }}
-			<p> Hello, {{ . }}</p>
+		{{ if .role }}
+			<p> Hello, admin</p>
 		{{ else }}
-			<p> Hello, Alex</p>
+			<p> Hello, man</p>
 		{{ end }}
 	</div>
 </body>

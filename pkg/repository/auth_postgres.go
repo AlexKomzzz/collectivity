@@ -24,6 +24,16 @@ func NewAuthPostgres(db *sqlx.DB) *AuthPostgres {
 	}
 }
 
+// создание админа
+func (r *AuthPostgres) CreateAdmin(admin app.User) error {
+
+	query := fmt.Sprintf("INSERT INTO %s (first_name, last_name, password_hash, email, role) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET first_name = EXCLUDED.first_name, last_name=EXCLUDED.last_name, password_hash=EXCLUDED.password_hash", DBusers)
+
+	_, err := r.db.Exec(query, admin.FirstName, admin.LastName, admin.Password, admin.Email, "admin")
+
+	return err
+}
+
 // создание пользователя в БД (при создании нового пользователя и потверждении эл.почты)
 // необходимо передать структуру User с зашифрованным паролем
 func (r *AuthPostgres) CreateUser(user *app.User) (int, error) {

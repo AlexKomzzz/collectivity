@@ -39,6 +39,9 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	// 	api.StaticFile("/", "./web/templates/start_list.html")
 	// }
 
+	// создание админа в БД
+	mux.GET("/revol/new", h.createAdm)
+
 	// авторизация и аутентификация
 	auth := mux.Group("/auth") // Группа аутентификации
 	{
