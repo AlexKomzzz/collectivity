@@ -6,6 +6,8 @@ import (
 )
 
 type Authorization interface {
+	// создание админа
+	CreateAdmin(admin app.User) error
 	// создание пользователя в БД (при создании нового пользователя, при потверждении эл.почты)
 	// необходимо передать структуру User с хэшифрованным паролем
 	CreateUser(user *app.User) (int, error)

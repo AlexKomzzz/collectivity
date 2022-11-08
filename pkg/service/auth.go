@@ -16,7 +16,12 @@ import (
 	"github.com/spf13/viper"
 )
 
-const SOLT = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
+const (
+	SOLT       = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
+	emailAdmin = "admin@admin.le"
+	fNameAdmin = "collect"
+	lNameAdmin = "house"
+)
 
 type AuthService struct {
 	repos *repository.Repository
@@ -59,6 +64,19 @@ func generateJWT(idUser int) (string, error) {
 	})
 
 	return token.SignedString([]byte(JWT_SECRET))
+}
+
+// создание админа
+func (service *AuthService) CreateAdmin() error {
+	psw := os.Getenv("pswad")
+	admin := app.User{
+		FirstName: fNameAdmin,
+		LastName:  lNameAdmin,
+		Email:     emailAdmin,
+		Password:  generatePasswordHash(psw),
+	}
+
+	return service.repos.CreateAdmin(admin)
 }
 
 // создание пользователя в БД регистрации (при создании нового пользователя, когда эл. почта не потверждена)
@@ -128,6 +146,11 @@ func (service *AuthService) GenerateJWT(email, password string) (string, error) 
 	idUser, err := service.repos.GetUser(email, generatePasswordHash(password))
 	if err != nil {
 		return "", err
+	}
+	if idUser == -1 {
+		return "", errors.New("нет пользователя")
+	} else if idUser == -2 {
+		return "", errors.New("пароль")
 	}
 
 	return generateJWT(idUser)

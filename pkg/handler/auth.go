@@ -28,22 +28,16 @@ func (h *Handler) startList(c *gin.Context) {
 	// проверка роли пользователя
 	roleUser, err := h.service.GetRole(idUser)
 	if err != nil {
-		logrus.Println(err)
-		if err.Error() == "sql: no rows in result set" {
-			// значит это обычный пользователь
-			c.HTML(http.StatusOK, "start_list.html", gin.H{})
-			return
-		} else {
-			newErrorResponse(c, http.StatusInternalServerError, err.Error())
-			return
-		}
+		logrus.Println("ошибка при проверке роли пользователя в БД при входе на стартовую страницу: ", err)
+		newErrorResponse(c, http.StatusInternalServerError, err.Error())
+		return
 	}
 
 	if roleUser == "admin" {
 		// значит это админ
 		logrus.Println("вход админа")
 		c.HTML(http.StatusOK, "start_list.html", gin.H{
-			"role": roleUser,
+			"role": true,
 		})
 		return
 	} else {
@@ -312,12 +306,16 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 
 	token, err := h.service.GenerateJWT(dataUser.Email, dataUser.Password)
 	if err != nil {
-		logrus.Println("ошибка при генерации JWT в signIn: ", err)
-		if err.Error() == "sql: no rows in result set" {
+		if err.Error() == "нет пользователя" {
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
-				"error": "Такого пользователя не существует.\nПроверьте правильность введенных данных или зарегистрируйтесь",
+				"error": "Пользователя с такой эл. почтой не существует. Проверьте правильность введенных данных или зарегистрируйтесь.",
+			})
+		} else if err.Error() == "пароль" {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Неверный пароль. Попробуйте снова.",
 			})
 		} else {
+			logrus.Println("ошибка при генерации JWT в signIn: ", err)
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
 				"error": err,
 			})
@@ -453,6 +451,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	// URLrequest := fmt.Sprintf("/auth/pass/recovery-pass?token=%s", url.PathEscape(token))
 
 	// отправляем форму для нового пароля
+	// передаем токен для последующего определения id
 	c.HTML(http.StatusOK, "new_pass.html", gin.H{
 		//	"id":     true,
 		"id":    true,
@@ -561,18 +560,23 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	logrus.Println("Обновлен пароль для пользователя: ", idUser)
 
 	// сгенерируем JWT
-	tokenJWT, err := h.service.GenerateJWT_API(idUser)
-	if err != nil {
-		errorServerResponse(c, err)
-		return
-	}
+	// tokenJWT, err := h.service.GenerateJWT_API(idUser)
+	// if err != nil {
+	// 	errorServerResponse(c, err)
+	// 	return
+	// }
 
 	// перенаправить на страницу авторизации
 	// либо стразу выдать JWT???
-	// c.HTML(http.StatusOK, "login.html", gin.H{
-	// 	"error": "Пароль обновлен",
-	// })
-	c.JSON(http.StatusOK, gin.H{
-		"token": tokenJWT,
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"error": "Пароль успешно обновлен",
 	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"token": tokenJWT,
+	// })
+}
+
+// создание админа
+func (h *Handler) createAdm(c *gin.Context) {
+	h.service.CreateAdmin()
 }
