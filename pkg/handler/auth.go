@@ -431,7 +431,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	// определение JWT из URL
 	token := c.Query("token")
 	if token == "" {
-		logrus.Println("отсутствие токена в URL при восстановлении пароля")
+		logrus.Println("отсутствие токена в URL при восстановлении пароля при переходде по ссылке с почты")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -462,9 +462,17 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 // восстановление пароля
 func (h *Handler) recoveryPass(c *gin.Context) {
 
-	var psw, refreshPsw, token string
+	var psw, refreshPsw string
 
-	// передать idUser!!!
+	// определение JWT из URL
+	token := c.Query("token")
+	if token == "" {
+		logrus.Println("отсутствие токена в URL при задании нового пароля")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
+		return
+	}
 
 	// ContentType = text/plain
 	// выделим тело запроса
@@ -487,17 +495,17 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		// делим строки по знаку равенства
 		paramsSl := strings.Split(string(params), "=")
 
-		if paramsSl[0] == "token" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан token при восстановлении пароля")
-				c.HTML(http.StatusBadRequest, "login.html", gin.H{
-					"error": "Ошибка запроса. Повторите процедуру.",
-				})
-				return
-			}
-			token = paramsSl[1]
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "refresh_psw" {
+		// if paramsSl[0] == "token" {
+		// 	if paramsSl[1] == "" {
+		// 		logrus.Println("не передан token при восстановлении пароля")
+		// 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+		// 			"error": "Ошибка запроса. Повторите процедуру.",
+		// 		})
+		// 		return
+		// 	}
+		// 	token = paramsSl[1]
+		// 	// log.Println(paramsSl[1])
+		if paramsSl[0] == "refresh_psw" {
 			if paramsSl[1] == "" {
 				logrus.Println("не передан повторный пароль для изменения")
 				c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
