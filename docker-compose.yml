@@ -47,6 +47,8 @@ services:
     ports:
       - 8080:8080
     restart: always
+    volumes:
+      - file_tom:/web/files
     deploy:
       restart_policy:
         condition: on-failure
@@ -72,5 +74,6 @@ networks:
 
 volumes:
   coll_tom:
+  file_tom:
 #   www-html:
 #   etc-letsencrypt:

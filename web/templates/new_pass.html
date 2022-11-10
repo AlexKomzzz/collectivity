@@ -101,8 +101,7 @@
                         <div class="error_title">{{ .msgErr }}</div>
                         {{ else }}
                         {{ end }}
-                        <!-- action="/auth/pass/recovery-pass" -->
-                        <form class="col s12" method="post" action="/auth/pass/recovery-pass" enctype="text/plain">
+                        <form class="col s12" method="post" action="/auth/pass/recovery-pass?token={{ .token }}" enctype="text/plain">
                             <div class='row'>
                                 <div class='col s12'>
                                 </div>
@@ -132,21 +131,21 @@
                             
                             <br/>
                             <div class='row'>
-                                <button type='submit' name='btn_login' class='col s12 btn btn-large waves-effect indigo'>
+                                <button type='submit' class='col s12 btn btn-large waves-effect indigo'>
                                     Восстановить пароль
                                 </button>
                             </div>
 
-                            {{ if .id }}
-                            <!-- Отправлять id в запросе hidden disabled-->
+                            <!-- {{ if .id }}
+                            Отправлять id в запросе hidden disabled
                             <div class='row'>
                                 <div class='input-field col s12'>
-                                    <input type="text" id="token" name="token" hidden>
+                                    <input type="text" id="token" name="token" value="{{ .token }}" hidden>
                                     <p id="tkn" hidden>{{ .token }}</p>
                                 </div>
                             </div>
                             {{ else }}
-                            {{ end }}
+                            {{ end }} -->
                         </form>
                         
                     </div>
@@ -169,11 +168,7 @@
                     var capital = document.getElementById("capital");
                     var number = document.getElementById("number");
                     var length = document.getElementById("length");
-                    var tkn = document.getElementById("tkn")
-                    var idUser = document.getElementById("token")
 
-
-                    idUser.value=tkn.innerText
                     // When the user clicks on the password field, show the message box
                     myInput.onfocus = function() {
                         document.getElementById("message").style.display = "block";
@@ -225,7 +220,7 @@
                         length.classList.add("invalid");
                       }
                     }
-                    </script>
+                </script>
     </body>
 
 </html>

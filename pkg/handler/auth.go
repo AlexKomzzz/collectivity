@@ -14,39 +14,6 @@ import (
 	"github.com/spf13/viper"
 )
 
-// стартовая страница
-func (h *Handler) startList(c *gin.Context) {
-
-	// идентифицируем пользователя
-	idUser, err := h.userIdentity(c)
-	if err != nil {
-		logrus.Println("Вход без идентификации")
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
-		return
-	}
-
-	// проверка роли пользователя
-	roleUser, err := h.service.GetRole(idUser)
-	if err != nil {
-		logrus.Println("ошибка при проверке роли пользователя в БД при входе на стартовую страницу: ", err)
-		newErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	if roleUser == "admin" {
-		// значит это админ
-		logrus.Println("вход админа")
-		c.HTML(http.StatusOK, "start_list.html", gin.H{
-			"role": true,
-		})
-		return
-	} else {
-		logrus.Println("обычный пользователь")
-		c.HTML(http.StatusOK, "start_list.html", gin.H{})
-		return
-	}
-}
-
 // получение данных при создании нового пользователя, запись в БД регистрации, отправка ссылки с токеном и email на почту для подтверждения эл.почты
 func (h *Handler) signUp(c *gin.Context) { // Обработчик для регистрации
 
@@ -431,7 +398,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	// определение JWT из URL
 	token := c.Query("token")
 	if token == "" {
-		logrus.Println("отсутствие токена в URL при восстановлении пароля")
+		logrus.Println("отсутствие токена в URL при восстановлении пароля при переходде по ссылке с почты")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -462,9 +429,17 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 // восстановление пароля
 func (h *Handler) recoveryPass(c *gin.Context) {
 
-	var psw, refreshPsw, token string
+	var psw, refreshPsw string
 
-	// передать idUser!!!
+	// определение JWT из URL
+	token := c.Query("token")
+	if token == "" {
+		logrus.Println("отсутствие токена в URL при задании нового пароля")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
+		return
+	}
 
 	// ContentType = text/plain
 	// выделим тело запроса
@@ -487,17 +462,17 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		// делим строки по знаку равенства
 		paramsSl := strings.Split(string(params), "=")
 
-		if paramsSl[0] == "token" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан token при восстановлении пароля")
-				c.HTML(http.StatusBadRequest, "login.html", gin.H{
-					"error": "Ошибка запроса. Повторите процедуру.",
-				})
-				return
-			}
-			token = paramsSl[1]
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "refresh_psw" {
+		// if paramsSl[0] == "token" {
+		// 	if paramsSl[1] == "" {
+		// 		logrus.Println("не передан token при восстановлении пароля")
+		// 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+		// 			"error": "Ошибка запроса. Повторите процедуру.",
+		// 		})
+		// 		return
+		// 	}
+		// 	token = paramsSl[1]
+		// 	// log.Println(paramsSl[1])
+		if paramsSl[0] == "refresh_psw" {
 			if paramsSl[1] == "" {
 				logrus.Println("не передан повторный пароль для изменения")
 				c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{

@@ -9,9 +9,14 @@
 </head>
 <body>
 	<div class="container">
-		<br><br>
+		<br>
 		{{ if .role }}
-			<p> Hello, admin</p>
+			<p> Hello, admin</p><br>
+			<form enctype="multipart/form-data" method="post" action="/files/get-file">
+				<p>Загрузите таблицу</p>
+				<p><input type="file" name="file">
+				<input type="submit" value="Отправить"></p>
+			</form>
 		{{ else }}
 			<p> Hello, man</p>
 		{{ end }}
