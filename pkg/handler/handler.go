@@ -30,7 +30,10 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	mux.Static("/assets", "./web/assets")
 	// mux.StaticFile("/", "index.html")
 
+	// тест
 	mux.GET("/test", h.test)
+	mux.StaticFile("/file", "./web/templates/ex.html")
+	mux.POST("/parse-file", h.parsFile)
 
 	// основная страница сайта
 	mux.GET("/", h.startList)

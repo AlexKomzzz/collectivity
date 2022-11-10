@@ -8,10 +8,13 @@
 	<title></title>
 </head>
 <body>
-<div class="container">
-<br><br>
-<p> Hello, {{ .req }}</p>
-</div>
+	<div class="container">
+		<form enctype="multipart/form-data" method="post" action="/parse-file">
+			<p>Загрузите таблицу</p>
+			<p><input type="file" name="file">
+			<input type="submit" value="Отправить"></p>
+		</form>
+	</div>
 </body>
 </html>
 {{end}}
