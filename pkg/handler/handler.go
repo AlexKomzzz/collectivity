@@ -32,8 +32,9 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 	// тест
 	mux.GET("/test", h.test)
-	mux.StaticFile("/file", "./web/templates/ex.html")
-	mux.POST("/parse-file", h.parsFile)
+
+	// пример отправки файла
+	// mux.StaticFile("/file", "./web/templates/ex.html")
 
 	// основная страница сайта
 	mux.GET("/", h.startList)
@@ -44,6 +45,15 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 	// создание админа в БД
 	mux.GET("/revol/new", h.createAdm)
+
+	// работа с файлами
+	files := mux.Group("/files")
+	{
+		// получение файла от клиента
+		files.POST("/get-file", h.getFile)
+		// отправка данных клиету
+		files.GET("/get-data", h.dataClient)
+	}
 
 	// авторизация и аутентификация
 	auth := mux.Group("/auth") // Группа аутентификации

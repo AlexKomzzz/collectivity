@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -69,7 +70,7 @@ func (h *Handler) parsFile(c *gin.Context) {
 	io.Copy(saveFile, file)
 
 	// чтение файла
-	readFile, err := os.Open("./web/files/test.txt")
+	readFile, err := os.Open(fmt.Sprintf("./web/files/%s", fileName))
 	if err != nil {
 		logrus.Println(err)
 		errorServerResponse(c, err)

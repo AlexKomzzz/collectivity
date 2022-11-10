@@ -12,7 +12,7 @@
 		<br>
 		{{ if .role }}
 			<p> Hello, admin</p><br>
-			<form enctype="multipart/form-data" method="post">
+			<form enctype="multipart/form-data" method="post" action="/files/get-file">
 				<p>Загрузите таблицу</p>
 				<p><input type="file" name="file">
 				<input type="submit" value="Отправить"></p>
