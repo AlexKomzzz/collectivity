@@ -8,6 +8,7 @@ type User struct {
 	MiddleName string `json:"middle_name" db:"middle_name"`
 	Email      string `json:"email" db:"email" binding:"required"`
 	Password   string `json:"password" db:"password_hash" binding:"required"`
+	Debt       string ` db:"debt"`
 }
 
 type UserGoogle struct {

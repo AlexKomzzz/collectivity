@@ -32,12 +32,19 @@ type Authorization interface {
 	// GetUserAPI(typeAPI, idAPI, email string) (int, error)
 }
 
+type DataClients interface {
+	// добавление данных по долгу у клиентв
+	AddDebtByClient(client *app.User) error
+}
+
 type Repository struct {
 	Authorization
+	DataClients
 }
 
 func NewRepository(db *sqlx.DB) *Repository {
 	return &Repository{
 		Authorization: NewAuthPostgres(db),
+		DataClients:   NewDataClientsPostgres(db),
 	}
 }

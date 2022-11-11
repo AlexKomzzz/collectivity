@@ -553,5 +553,15 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 
 // создание админа
 func (h *Handler) createAdm(c *gin.Context) {
-	h.service.CreateAdmin()
+	err := h.service.CreateAdmin()
+	if err != nil {
+		logrus.Println("ошибка при создании админа", err)
+		errorServerResponse(c, err)
+		return
+	}
+
+	logrus.Println("Создание Админа в БД")
+	c.JSON(http.StatusOK, gin.H{
+		"admin": "ok",
+	})
 }
