@@ -8,7 +8,8 @@ CREATE TABLE users
     middle_name     varchar(255)                                , -- отчество
     password_hash   varchar(255)                                ,
     email           varchar(255)    not null unique             ,
-    role            varchar(255)                                  -- роль (напр. admin)
+    role_user       varchar(255)                                ,  -- роль (напр. admin)
+    debt            varchar(255)
 );
 
 CREATE TABLE authdata
@@ -19,6 +20,13 @@ CREATE TABLE authdata
     middle_name     varchar(255)                                , -- отчество
     password_hash   varchar(255)    not null                    ,
     email           varchar(255)    not null unique             
+);
+
+CREATE TABLE debts
+(
+    id          serial                                              not null unique  primary key,
+    id_user     int references users (id) on delete cascade         not null unique,
+    debt        varchar(255)
 );
 
 -- CREATE TABLE todo_lists

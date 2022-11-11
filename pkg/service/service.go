@@ -1,6 +1,8 @@
 package service
 
 import (
+	"mime/multipart"
+
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
 )
@@ -47,12 +49,21 @@ type Authorization interface {
 	ComparisonEmail(emailUser, emailURL string) error
 }
 
+type FileHanding interface {
+	// сохранение файла на сервере
+	SaveFileToServe(file multipart.File) error
+	// запись данных из файла в БД
+	ParseDataFileToDB() error
+}
+
 type Service struct {
 	Authorization
+	FileHanding
 }
 
 func NewService(repos *repository.Repository) *Service {
 	return &Service{
 		Authorization: NewAuthService(repos),
+		FileHanding:   NewFileService(repos),
 	}
 }

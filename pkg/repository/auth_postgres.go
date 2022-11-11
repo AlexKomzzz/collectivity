@@ -10,6 +10,7 @@ import (
 )
 
 const (
+	// названия таблиц в БД
 	DBusers = "users"
 	DBauth  = "authdata"
 )
@@ -27,7 +28,7 @@ func NewAuthPostgres(db *sqlx.DB) *AuthPostgres {
 // создание админа
 func (r *AuthPostgres) CreateAdmin(admin app.User) error {
 
-	query := fmt.Sprintf("INSERT INTO %s (first_name, last_name, password_hash, email, role) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET first_name = EXCLUDED.first_name, last_name=EXCLUDED.last_name, password_hash=EXCLUDED.password_hash", DBusers)
+	query := fmt.Sprintf("INSERT INTO %s (first_name, last_name, password_hash, email, role_user) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET first_name = EXCLUDED.first_name, last_name=EXCLUDED.last_name, password_hash=EXCLUDED.password_hash", DBusers)
 
 	_, err := r.db.Exec(query, admin.FirstName, admin.LastName, admin.Password, admin.Email, "admin")
 
@@ -236,10 +237,10 @@ func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 }
 
 // обновление пароля у пользователя
-func (service *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
+func (r *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
 
 	query := "UPDATE users SET password_hash=$1 WHERE id=$2"
-	_, err := service.db.Exec(query, newHashPsw, idUser)
+	_, err := r.db.Exec(query, newHashPsw, idUser)
 	if err != nil {
 		return err
 	}
@@ -248,11 +249,11 @@ func (service *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
 }
 
 // проверка роли пользователя по id
-func (service *AuthPostgres) GetRole(idUser int) (string, error) {
+func (r *AuthPostgres) GetRole(idUser int) (string, error) {
 	var roleUser string
 
-	query := "SELECT role FROM users WHERE id=$1"
-	err := service.db.Get(&roleUser, query, idUser)
+	query := "SELECT role_user FROM users WHERE id=$1"
+	err := r.db.Get(&roleUser, query, idUser)
 
 	return roleUser, err
 }

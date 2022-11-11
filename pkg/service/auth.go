@@ -17,10 +17,17 @@ import (
 )
 
 const (
-	SOLT       = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
+
+	// данные админа
 	emailAdmin = "admin@admin.le"
 	fNameAdmin = "collect"
 	lNameAdmin = "house"
+
+	SOLT            = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
+	tokenTTL        = 300 * time.Hour               // время жизни токена аутентификации
+	tokenTTLtoEmail = 15 * time.Minute              // время жизни токена при восстановлении пароля или подтверждении почты
+	JWT_SECRET      = "rkjk#4#%35FSFJlja#4353KSFjH" // секрет для JWT
+	JWTemail_SECRET = "r2sk#4#gdfoij743*#weg(FjH"   // секрет для токена при восстановлении пароля и подтверждения почты
 )
 
 type AuthService struct {
@@ -30,16 +37,6 @@ type AuthService struct {
 func NewAuthService(repos *repository.Repository) *AuthService {
 	return &AuthService{repos: repos}
 }
-
-const (
-	tokenTTL        = 300 * time.Hour  // время жизни токена аутентификации
-	tokenTTLtoEmail = 15 * time.Minute // время жизни токена при восстановлении пароля или подтверждении почты
-)
-
-const (
-	JWT_SECRET      = "rkjk#4#%35FSFJlja#4353KSFjH"
-	JWTemail_SECRET = "r2sk#4#gdfoij743*#weg(FjH"
-)
 
 type tokenClaims struct {
 	jwt.StandardClaims
