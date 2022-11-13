@@ -2,9 +2,11 @@ package service
 
 import (
 	"errors"
+	"fmt"
 	"io"
 	"mime/multipart"
 	"os"
+	"strings"
 
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
@@ -75,15 +77,16 @@ func (service *FileService) ParseDataFileToDB() error {
 
 			switch j {
 			case 0:
-				client.LastName = colCell
+				client.LastName = strings.TrimSpace(colCell)
 			case 1:
-				client.FirstName = colCell
+				client.FirstName = strings.TrimSpace(colCell)
 			case 2:
-				client.MiddleName = colCell
+				client.MiddleName = strings.TrimSpace(colCell)
 			case 3:
 				client.Debt = colCell
 			}
 		}
+		client.Username = fmt.Sprintf("%s %s %s", client.LastName, client.FirstName, client.MiddleName)
 		logrus.Println(*client)
 
 		// запись данных пользователя в БД

@@ -55,7 +55,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 				})
 				return
 			}
-			dataUser.FirstName = paramsSl[1]
+			dataUser.FirstName = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "last-name" {
 			if paramsSl[1] == "" {
@@ -66,11 +66,11 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 				})
 				return
 			}
-			dataUser.LastName = paramsSl[1]
+			dataUser.LastName = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "middle-name" {
 			if len(paramsSl) > 1 {
-				dataUser.MiddleName = paramsSl[1]
+				dataUser.MiddleName = strings.TrimSpace(paramsSl[1])
 			}
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "email" {
@@ -82,7 +82,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 				})
 				return
 			}
-			dataUser.Email = paramsSl[1]
+			dataUser.Email = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "psw" {
 			if paramsSl[1] == "" {
@@ -93,7 +93,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 				})
 				return
 			}
-			dataUser.Password = paramsSl[1]
+			dataUser.Password = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "psw-repeat" {
 			if paramsSl[1] == "" {
@@ -104,21 +104,25 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 				})
 				return
 			}
-			passRepeat = paramsSl[1]
+			passRepeat = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		}
 	}
 
+	// составление ФИО
+	dataUser.Username = fmt.Sprintf("%s %s %s", dataUser.LastName, dataUser.FirstName, dataUser.MiddleName)
+
 	// Проверка на отсутствие пользователя с таким email в БД
 	ok, err := h.service.CheckUserByEmail(dataUser.Email)
 	if err != nil {
+		logrus.Println("Handler/signUp(): ", err.Error())
 		errorServerResponse(c, err)
 		return
 	}
 	if ok {
 		c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
 			"err":    true,
-			"msgErr": "Пользователь с данным электронным адресом уже существует.",
+			"msgErr": "Пользователь с указанной электронной почтой уже зарегистрирован.",
 		})
 		return
 	}
@@ -164,7 +168,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 	// отправка письма на почту пользователя, для подтверждения email
 	err = h.service.SendMessageByMail(dataUser.Email, URL, msg)
 	if err != nil {
-		logrus.Println("ошибка при отправке ссылки на подтверждение email на почту пользователя: ", err)
+		logrus.Println("Handler/signUp():", err)
 		errorServerResponse(c, err)
 		return
 	}
@@ -184,7 +188,7 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	tokenByURL := c.Query("token")
 	emailByURL := c.Query("email")
 	if tokenByURL == "" || emailByURL == "" {
-		logrus.Println("отсутствие токена или email в URL при подтверждении почты")
+		logrus.Println("Handler/signAdd(): отсутствие токена или email в URL при подтверждении почты")
 		newErrorResponse(c, http.StatusBadRequest, "invalid URL")
 		return
 	}
@@ -192,7 +196,7 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	// определение пользователя по JWT
 	idUserAuth, err := h.service.ParseTokenEmail(tokenByURL)
 	if err != nil {
-		logrus.Println("ошибка при парсе токена при подтверждении почты: ", err)
+		logrus.Println("Handler/signAdd(): ", err)
 		errorServerResponse(c, err)
 		return
 	}
@@ -200,7 +204,7 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	// получение данных пользователя из БД authdata
 	dataUser, err := h.service.GetUserFromAuth(idUserAuth)
 	if err != nil {
-		logrus.Println("ошибка при получении данных пользователя из БД authdata: ", err)
+		logrus.Println("Handler/signAdd(): ", err)
 		errorServerResponse(c, err)
 		return
 	}
@@ -208,7 +212,7 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	// сравнение email полученного и сохраненного в БД
 	err = h.service.ComparisonEmail(dataUser.Email, emailByURL)
 	if err != nil {
-		logrus.Println("неуспешное сравнение emails в signAdd: ", err)
+		logrus.Println("Handler/signAdd(): ", err)
 		newErrorResponse(c, http.StatusBadRequest, "пользователь с данным адресом электронной почты не регистрировался")
 		return
 	}
@@ -216,7 +220,15 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	// создание пользователя в БД
 	idUser, err := h.service.CreateUser(&dataUser)
 	if err != nil {
-		logrus.Println("ошибка при создании пользователя в БД users: ", err)
+		if idUser == -1 {
+			logrus.Println("пользователь с таким ФИО не может быть зарегистрирован - ", dataUser.Username, ": ", err)
+			c.HTML(http.StatusBadRequest, "forma_auth", gin.H{
+				"err":    true,
+				"msgErr": fmt.Sprintf("Пользователь с ФИО \"%s\" не может быть зарегистрирован", dataUser.Username),
+			})
+			return
+		}
+		logrus.Println("Handler/signAdd(): ", err)
 		errorServerResponse(c, err)
 		return
 	}
@@ -263,10 +275,10 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 		paramsSl := strings.Split(string(params), "=")
 
 		if paramsSl[0] == "email" {
-			dataUser.Email = paramsSl[1]
+			dataUser.Email = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "password" {
-			dataUser.Password = paramsSl[1]
+			dataUser.Password = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		}
 	}
@@ -282,12 +294,10 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 				"error": "Неверный пароль. Попробуйте снова.",
 			})
 		} else {
-			logrus.Println("ошибка при генерации JWT в signIn: ", err)
-			c.HTML(http.StatusBadRequest, "login.html", gin.H{
-				"error": err,
-			})
+			logrus.Println("Handler/signIn(): ", err)
+			errorServerResponse(c, err)
 		}
-		//newErrorResponse(c, http.StatusInternalServerError, err.Error())
+
 		return
 	}
 
@@ -309,9 +319,9 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	}*/
 	body, err := ioutil.ReadAll(c.Request.Body)
 	if err != nil {
-		logrus.Println(err)
+		logrus.Println("Handler/definitionUser()/ReadAll(): ", err)
 		c.HTML(http.StatusBadRequest, "new_pass_email.html", gin.H{
-			"error": "Ошибка запроса. Повторите процедуру.",
+			"error": "Ошибка запроса. Повторите процедуру",
 		})
 		return
 	}
@@ -331,7 +341,7 @@ func (h *Handler) definitionUser(c *gin.Context) {
 				})
 				return
 			}
-			emailUser = paramsSl[1]
+			emailUser = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		}
 	}
@@ -340,15 +350,14 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	idUser, err := h.service.GetUserByEmail(emailUser)
 	if err != nil {
 		logrus.Println(err)
-		if err.Error() == "sql: no rows in result set" {
+		if idUser == -1 {
+			logrus.Println("Handler/definitionUser(): ", err)
 			c.HTML(http.StatusBadRequest, "new_pass_email.html", gin.H{
 				"error": "Пользователя с таким адресом электронной почты не существует.",
 			})
 		} else {
+			logrus.Println("Handler/definitionUser(): ", err)
 			errorServerResponse(c, err)
-			// c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-			// 	"error": err,
-			// })
 		}
 		return
 	}
@@ -356,11 +365,8 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	// генерация токена для отправки на почту для восстановление пароля
 	token, err := h.service.GenerateJWTtoEmail(idUser)
 	if err != nil {
-		logrus.Println("ошибка при генерации токена для восстановления пароля: ", err)
+		logrus.Println("Handler/definitionUser(): ", err)
 		errorServerResponse(c, err)
-		// c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-		// 	"error": err,
-		// })
 		return
 	}
 
@@ -377,11 +383,8 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	// отпрвка сообщения на почту пользователя с ссылкой для восстановления пароля
 	err = h.service.SendMessageByMail(emailUser, URL, msg)
 	if err != nil {
-		logrus.Println("ошибка при отправке письма на почту пользователя при восстановлении пароля: ", err)
+		logrus.Println("Handler/definitionUser(): ", err)
 		errorServerResponse(c, err)
-		// c.HTML(http.StatusBadRequest, "recovery_pass.html", gin.H{
-		// 	"error": err,
-		// })
 		return
 	}
 
@@ -398,7 +401,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	// определение JWT из URL
 	token := c.Query("token")
 	if token == "" {
-		logrus.Println("отсутствие токена в URL при восстановлении пароля при переходде по ссылке с почты")
+		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие токена в URL при восстановлении пароля при переходде по ссылке с почты")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -408,7 +411,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	// определяем пользователя по JWT
 	_, err := h.service.ParseTokenEmail(token)
 	if err != nil {
-		logrus.Println(err)
+		logrus.Println("Handler/definitionUserJWT(): ", err)
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -434,7 +437,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// определение JWT из URL
 	token := c.Query("token")
 	if token == "" {
-		logrus.Println("отсутствие токена в URL при задании нового пароля")
+		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие токена в URL при задании нового пароля")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -483,7 +486,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 				})
 				return
 			}
-			refreshPsw = paramsSl[1]
+			refreshPsw = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		} else if paramsSl[0] == "psw" {
 			if paramsSl[1] == "" {
@@ -496,7 +499,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 				})
 				return
 			}
-			psw = paramsSl[1]
+			psw = strings.TrimSpace(paramsSl[1])
 			// log.Println(paramsSl[1])
 		}
 	}
@@ -514,7 +517,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// захэшируем пароли и проверим, что они совпадают
 	err = h.service.CheckPass(&psw, &refreshPsw)
 	if err != nil {
-		logrus.Println(err)
+		logrus.Println("Handler/recoveryPass(): ", err)
 		c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
 			"id":     true,
 			"token":  token,
@@ -527,7 +530,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// перезапишем новый пароль в БД
 	err = h.service.UpdatePass(idUser, psw)
 	if err != nil {
-		logrus.Println(err)
+		logrus.Println("Handler/recoveryPass(): ", err)
 		errorServerResponse(c, err)
 		return
 	}
@@ -555,7 +558,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 func (h *Handler) createAdm(c *gin.Context) {
 	err := h.service.CreateAdmin()
 	if err != nil {
-		logrus.Println("ошибка при создании админа", err)
+		logrus.Println("Handler/createAdm(): ", err)
 		errorServerResponse(c, err)
 		return
 	}

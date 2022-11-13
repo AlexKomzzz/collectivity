@@ -1,4 +1,4 @@
-DROP TABLE debts;
+-- DROP TABLE debts;
 
 DROP TABLE authdata;
 

@@ -18,23 +18,13 @@ func NewDataClientsPostgres(db *sqlx.DB) *DataClientsPostgres {
 	}
 }
 
-// добавление данных по долгу у клиентв
+// добавление данных по долгу у клиента
 func (r *DataClientsPostgres) AddDebtByClient(client *app.User) error {
 
-	query := fmt.Sprintf("ON CONFLICT (t2.first_name, t2.last_name, t2.middle_name) DO UPDATE SET debt = EXCLUDED.debt", DBauth, DBusers) // отчест во необязательно!!! OR first_name=$2 AND last_name=$3
-	_, err := r.db.Exec(query, client.Debt, client.FirstName, client.LastName, client.MiddleName)
+	query := fmt.Sprintf("INSERT INTO %s (username, first_name, last_name, middle_name, debt) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (username) DO UPDATE SET debt = EXCLUDED.debt ", DBusers)
+	_, err := r.db.Exec(query, client.Username, client.FirstName, client.LastName, client.MiddleName, client.Debt)
 	if err != nil {
 		return errors.New("DataClientsPostgres/AddDebtByClient()/ошибка при добавлении данных по клиенту в БД: " + err.Error())
 	}
 	return nil
 }
-
-// UPDATE %s AS t1 SET t1.debt = $1 FROM %s AS t2 WHERE t2.id=t1.id_user AND t2.first_name=$2 AND t2.last_name=$3 AND t2.middle_name=$4
-
-// SELECT EXISTS (SELECT (id) FROM users WHERE first_name='Алексей' AND last_name='Комиссаров' AND middle_name='');
-
-// SELECT (id) FROM users WHERE EXISTS (SELECT (id) FROM users WHERE first_name='Светлана' AND last_name='Симакова' AND middle_name='Владимировна');
-
-// INSERT INTO debts (id_user, debt)
-// VALUES (1, 100)
-// ON CONFLICT (id_user) DO UPDATE SET debt = EXCLUDED.debt;

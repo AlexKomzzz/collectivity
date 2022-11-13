@@ -44,7 +44,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	// }
 
 	// создание админа в БД
-	mux.GET("/revol/new", h.createAdm)
+	mux.GET("/admin", h.createAdm)
 
 	// работа с файлами
 	files := mux.Group("/files")

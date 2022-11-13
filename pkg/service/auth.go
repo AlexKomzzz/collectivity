@@ -67,6 +67,7 @@ func generateJWT(idUser int) (string, error) {
 func (service *AuthService) CreateAdmin() error {
 	psw := os.Getenv("pswad")
 	admin := app.User{
+		Username:  fmt.Sprintf("%s %s", lNameAdmin, fNameAdmin),
 		FirstName: fNameAdmin,
 		LastName:  lNameAdmin,
 		Email:     emailAdmin,
@@ -92,7 +93,15 @@ func (service *AuthService) CreateUserByAuth(user *app.User, passRepeat string) 
 // создание пользователя в БД (при создании нового пользователя и потверждении эл.почты)
 // возвращяет id созданного пользователя из таблицы users
 func (service *AuthService) CreateUser(user *app.User) (int, error) {
-	return service.repos.CreateUser(user)
+	ok, err := service.repos.CheckUser(user.Username)
+	if err != nil {
+		return 0, errors.New("AuthService/CreateUser(): " + err.Error())
+	}
+	if ok {
+		return service.repos.CreateUser(user)
+	} else {
+		return -1, errors.New("данный пользователь не может быть зарегистрирован")
+	}
 }
 
 // Проверка на отсутствие пользователя с таким email в БД
@@ -109,7 +118,7 @@ func (service *AuthService) CheckPass(psw, refreshPsw *string) error {
 
 	// Сравним переданные пароли
 	if *psw != *refreshPsw {
-		return errors.New("пароли не совпадают")
+		return errors.New("AuthService/CheckPass(): пароли не совпадают")
 	}
 
 	return nil
@@ -209,17 +218,17 @@ func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 func (service *AuthService) ParseTokenEmail(accesstoken string) (int, error) {
 	token, err := jwt.ParseWithClaims(accesstoken, &tokenClaims{}, func(token *jwt.Token) (interface{}, error) {
 		if _, ok := token.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, errors.New("invalid signing method")
+			return nil, errors.New("AuthService/ParseTokenEmail()/ParseWithClaims()/token.Method(): invalid signing method")
 		}
 		return []byte(JWTemail_SECRET), nil
 	})
 	if err != nil {
-		return 0, err
+		return 0, errors.New("AuthService/ParseTokenEmail()/ParseWithClaims(): " + err.Error())
 	}
 
 	claims, ok := token.Claims.(*tokenClaims)
 	if !ok {
-		return 0, errors.New("token claims are not of type *tokenClaims")
+		return 0, errors.New("AuthService/ParseTokenEmail()/token.Claims(): token claims are not of type *tokenClaims")
 	}
 
 	return claims.UserId, nil
@@ -249,7 +258,7 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 	logrus.Println("send mes OK")
 
 	if err != nil {
-		return err
+		return errors.New("AuthService/SendMessageByMail()/ ошибка при отправке письма на почту пользователя: " + err.Error())
 	}
 
 	return nil
@@ -266,7 +275,7 @@ func (service *AuthService) ComparisonEmail(emailUser, emailURL string) error {
 
 	// Сравним emails
 	if emailUser != emailURL {
-		return errors.New("emails не совпадают")
+		return errors.New("AuthService/ComparisonEmail(): emails не совпадают")
 	}
 
 	return nil
