@@ -2,6 +2,7 @@ package repository
 
 import (
 	app "github.com/AlexKomzzz/collectivity"
+	"github.com/go-redis/redis"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -14,7 +15,7 @@ type Authorization interface {
 	// создание пользователя в БД регистрации (при создании нового пользователя, когда эл. почта не потверждена)
 	CreateUserByAuth(user *app.User) (int, error)
 	// создание пользователя в БД при авторизации через Google  или Яндекс
-	CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
+	//CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
 	// проверка на существование пользователя в таблице users
 	CheckUser(username string) (bool, error)
 	// проверка на отсутствие пользователя с таким email в БД
@@ -34,6 +35,13 @@ type Authorization interface {
 	// GetUserAPI(typeAPI, idAPI, email string) (int, error)
 }
 
+type AuthCash interface {
+	// добавление в кэш данных о пользователе с ключом idUser
+	SetUserCash(userIdAPI int, userData []byte) error
+	// получение из кэша данных о пользователе по ключу idUser
+	GetUserCash(userIdAPI int) ([]byte, error)
+}
+
 type DataClients interface {
 	// добавление данных по долгу у клиентв
 	AddDebtByClient(client *app.User) error
@@ -41,12 +49,14 @@ type DataClients interface {
 
 type Repository struct {
 	Authorization
+	AuthCash
 	DataClients
 }
 
-func NewRepository(db *sqlx.DB) *Repository {
+func NewRepository(db *sqlx.DB, redisClient *redis.Client) *Repository {
 	return &Repository{
 		Authorization: NewAuthPostgres(db),
+		AuthCash:      NewAuthRedis(redisClient),
 		DataClients:   NewDataClientsPostgres(db),
 	}
 }

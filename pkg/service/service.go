@@ -17,30 +17,36 @@ type Authorization interface {
 	// возвращяет id созданного пользователя из таблицы users
 	CreateUser(user *app.User) (int, error)
 	// функция создания Пользователя при авторизации через Google или Яндекс
-	CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
-	// Проверка на отсутствие пользователя с таким email в БД
+	// в переменную typeAPI необходимо передать 'google' либо 'yandex'
+	//CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
+	// проверка на отсутствие пользователя с таким email в БД
 	CheckUserByEmail(email string) (bool, error)
 	// хэширование и проверка паролей на соответсвие
 	CheckPass(psw, refreshPsw *string) error
+	// конвертация idUser из строки в число
+	ConvertID(idUser string) (int, error)
 	// определение idUser по email
 	GetUserByEmail(email string) (int, error)
 	// получение данных о пользователе (с неподтвержденным email) из БД authdata
 	GetUserFromAuth(idUserAuth int) (app.User, error)
+	// получение данных о пользователе из кэша
+	GetUserCash(idUserAPI int) ([]byte, error)
 	// проверка роли пользователя по id
 	GetRole(idUser int) (string, error)
 	// генерация JWT по email и паролю
 	GenerateJWT(email, password string) (string, error)
-	// генерация JWT при Google или Яндекс авторизации
-	// в переменную typeAPI необходимо передать 'google' либо 'yandex'
-	GenerateJWT_API(idUser int) (string, error)
+	// генерация JWT с указанием idUser
+	GenerateJWTbyID(idUser int) (string, error)
 	// генерация токена для восстановления пароля или подтверждения почты
 	GenerateJWTtoEmail(idUser int) (string, error)
 	// проверка заголовка авторизации на валидность
 	ValidToken(headerAuth string) (int, error)
-	// Парс токена (получаем из токена id)
+	// парс токена (получаем из токена id)
 	ParseToken(accesstoken string) (int, error)
-	// Парс токена при восстановлении пароля или подтверждении почты
+	// парс токена при восстановлении пароля или подтверждении почты
 	ParseTokenEmail(accesstoken string) (int, error)
+	// запись данных о пользователе в кэш
+	SetUserCash(idUserAPI int, userData []byte) error
 	// отправка сообщения пользователю на почту для передачи ссылки
 	SendMessageByMail(emailUser, url, msg string) error
 	// обновление пароля у пользователя

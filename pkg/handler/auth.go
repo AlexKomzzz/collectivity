@@ -2,6 +2,7 @@ package handler
 
 import (
 	"bytes"
+	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +14,144 @@ import (
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
+
+// создание админа
+func (h *Handler) createAdm(c *gin.Context) {
+	err := h.service.CreateAdmin()
+	if err != nil {
+		logrus.Println("Handler/createAdm(): ", err)
+		errorServerResponse(c, err)
+		return
+	}
+
+	logrus.Println("Создание Админа в БД")
+	c.JSON(http.StatusOK, gin.H{
+		"admin": "ok",
+	})
+}
+
+// создание пользователя при получении данных с помощью OAuth (Google или Яндекс)
+func (h *Handler) createUserOAuth(c *gin.Context) {
+
+	var dataUser app.User
+
+	// определение JWT_API из URL
+	tokenAPI := c.Query("token")
+	if tokenAPI == "" {
+		logrus.Println("Handler/createUserOAuth()/Query(): отсутствие токена в URL при задании нового пароля")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
+		return
+	}
+
+	// получени отчества пользователя из тела запроса
+	/* структура тела запроса {
+		middle-name=<middle-name>
+	}*/
+	body, err := ioutil.ReadAll(c.Request.Body)
+	if err != nil {
+		logrus.Println("Handler/createUserOAuth()/ReadAll()/ ошибка при чтении тела запроса: ", err)
+		c.HTML(http.StatusBadRequest, "middle_names.html", gin.H{
+			"err":    true,
+			"msgErr": "Ошибка запроса. Введите, пожалуйста, данные снова",
+		})
+		return
+	}
+
+	// выделим данные из body и запишем в структуру User
+	// разделим поля данных в запросе
+	res := bytes.Split(body, []byte{13, 10})
+	for _, params := range res {
+		// делим строки по знаку равенства
+		paramsSl := strings.Split(string(params), "=")
+
+		if paramsSl[0] == "middle-name" {
+			if paramsSl[1] == "" {
+				logrus.Println("Handler/createUserOAuth()/ ошибка не передано отчество в теле запроса при регистрации через OAuth2")
+				c.HTML(http.StatusBadRequest, "middle_names.html", gin.H{
+					"err":    true,
+					"msgErr": "Ошибка запроса. Введите, пожалуйста, данные снова",
+				})
+				return
+			}
+			dataUser.MiddleName = strings.TrimSpace(paramsSl[1])
+			// log.Println(paramsSl[1])
+		}
+	}
+
+	// восстановить idUserAPI из JWT
+	idUserAPI, err := h.service.ParseToken(tokenAPI)
+	if err != nil {
+		logrus.Println("Handler/createUserOAuth()/ParseToken()/ ошибка при парсе JWT: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	// считать данные пользователя из кэша по idUserAPI
+	dataCash, err := h.service.GetUserCash(idUserAPI)
+	if err != nil {
+		logrus.Println("Handler/createUserOAuth()/GetUserCash()/ ошибка при считывании данных из кэша: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	err = json.Unmarshal(dataCash, &dataUser)
+	if err != nil {
+		logrus.Println("Handler/createUserOAuth()/Unmarshal()/ ошибка при декодировании данных кэша в структуру пользователя: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	// составление ФИО
+	dataUser.Username = fmt.Sprintf("%s %s %s", dataUser.LastName, dataUser.FirstName, dataUser.MiddleName)
+
+	// создание пользователя в БД (или обновление, если уже создан)
+	idUser, err := h.service.CreateUser(&dataUser)
+	if err != nil {
+		logrus.Println("Handler/createUserOAuth(): ", dataUser.Username, " - ", err)
+		if idUser == -1 {
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": fmt.Sprintf("Пользователь с ФИО \"%s\" не может быть зарегистрирован", dataUser.Username),
+			})
+			return
+		}
+		errorServerResponse(c, err)
+		return
+	}
+
+	/*idUser, err := h.service.CreateUserAPI("yandex", userData.Id, userData.FirstName, userData.LastName, userData.Email)
+	if err != nil {
+		logrus.Println(err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}*/
+
+	// получение JWT по id пользователя
+	token, err := h.service.GenerateJWTbyID(idUser)
+	if err != nil {
+		logrus.Println("Handler/createUserOAuth(): ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	logrus.Printf("JWT для пользователя %s: %s\n", idUser, token)
+
+	// передача JWT токена пользователю
+	c.JSON(http.StatusOK, gin.H{
+		"token": token,
+	})
+}
 
 // получение данных при создании нового пользователя, запись в БД регистрации, отправка ссылки с токеном и email на почту для подтверждения эл.почты
 func (h *Handler) signUp(c *gin.Context) { // Обработчик для регистрации
@@ -235,7 +374,7 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	logrus.Println("Создан новый пользователь: ", idUser)
 
 	// генерация JWT по id
-	token, err := h.service.GenerateJWT_API(idUser)
+	token, err := h.service.GenerateJWTbyID(idUser)
 	if err != nil {
 		logrus.Println("ошибка при генерации JWT в signAdd: ", err)
 		errorServerResponse(c, err)
@@ -552,19 +691,4 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// c.JSON(http.StatusOK, gin.H{
 	// 	"token": tokenJWT,
 	// })
-}
-
-// создание админа
-func (h *Handler) createAdm(c *gin.Context) {
-	err := h.service.CreateAdmin()
-	if err != nil {
-		logrus.Println("Handler/createAdm(): ", err)
-		errorServerResponse(c, err)
-		return
-	}
-
-	logrus.Println("Создание Админа в БД")
-	c.JSON(http.StatusOK, gin.H{
-		"admin": "ok",
-	})
 }

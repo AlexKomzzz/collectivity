@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"net/smtp"
 	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -124,10 +125,18 @@ func (service *AuthService) CheckPass(psw, refreshPsw *string) error {
 	return nil
 }
 
+/*
 // функция создания Пользователя при авторизации через Google или Яндекс
 func (service *AuthService) CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error) {
 
+	//
+
 	return service.repos.CreateUserAPI(typeAPI, idAPI, firstName, lastName, email)
+}*/
+
+// конвертация idUser из строки в число
+func (service *AuthService) ConvertID(idUser string) (int, error) {
+	return strconv.Atoi(idUser)
 }
 
 // определение idUser по email
@@ -138,6 +147,11 @@ func (service *AuthService) GetUserByEmail(email string) (int, error) {
 // получение данных о пользователе (с неподтвержденным email) из БД authdata
 func (service *AuthService) GetUserFromAuth(idUserAuth int) (app.User, error) {
 	return service.repos.GetUserFromAuth(idUserAuth)
+}
+
+// получение данных о пользователе из кэша
+func (service *AuthService) GetUserCash(idUserAPI int) ([]byte, error) {
+	return service.repos.GetUserCash(idUserAPI)
 }
 
 // проверка роли пользователя по id
@@ -163,9 +177,7 @@ func (service *AuthService) GenerateJWT(email, password string) (string, error) 
 }
 
 // генерация JWT с указанием idUser
-// при Google или Яндекс авторизации
-// в переменную typeAPI необходимо передать 'google' либо 'yandex'
-func (service *AuthService) GenerateJWT_API(idUser int) (string, error) {
+func (service *AuthService) GenerateJWTbyID(idUser int) (string, error) {
 
 	return generateJWT(idUser)
 }
@@ -232,6 +244,11 @@ func (service *AuthService) ParseTokenEmail(accesstoken string) (int, error) {
 	}
 
 	return claims.UserId, nil
+}
+
+// запись данных о пользователе в кэш
+func (service *AuthService) SetUserCash(idUserAPI int, userData []byte) error {
+	return service.repos.SetUserCash(idUserAPI, userData)
 }
 
 // отправка сообщения пользователю на почту для передачи ссылки

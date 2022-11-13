@@ -54,7 +54,7 @@ func (r *AuthPostgres) CreateAdmin(admin app.User) error {
 // необходимо передать структуру User с зашифрованным паролем
 func (r *AuthPostgres) CreateUser(user *app.User) (int, error) {
 
-	// определение id пользователя
+	// определение id пользователя по ФИО
 	queryId := fmt.Sprintf("SELECT id FROM %s WHERE username=$1", DBusers)
 	var idUser int
 	err := r.db.Get(&idUser, queryId, user.Username)
@@ -62,7 +62,8 @@ func (r *AuthPostgres) CreateUser(user *app.User) (int, error) {
 		return 0, errors.New("AuthPostgres/CreateUser()/ошибка при определении id пользователя в таблице users: " + err.Error())
 	}
 
-	query := fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (id_user) DO UPDATE SET password_hash=EXCLUDED.password_hash, email=EXCLUDED.email", DBauthuser)
+	// создание нового пользователя в БД auth
+	query := fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (email) DO NOTHING", DBauthuser)
 
 	_, err = r.db.Exec(query, idUser, user.Password, user.Email)
 	if err != nil {
@@ -88,6 +89,7 @@ func (r *AuthPostgres) CreateUserByAuth(user *app.User) (int, error) {
 	return id, nil
 }
 
+/*
 // создание пользователя в БД при авторизации через Google или Яндекс
 func (r *AuthPostgres) CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error) {
 
@@ -103,6 +105,7 @@ func (r *AuthPostgres) CreateUserAPI(typeAPI, idAPI, firstName, lastName, email 
 
 	return idUser, nil
 }
+*/
 
 // проверка на существование пользователя в таблице users
 func (r *AuthPostgres) CheckUser(username string) (bool, error) {
