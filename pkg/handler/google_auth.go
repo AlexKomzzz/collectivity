@@ -77,6 +77,7 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 	// 	return
 	// }
 
+	// запрос к API Google для получение данных о пользователе по access token`у
 	data, err := getUserDataFromGoogle(c)
 	if err != nil {
 		logrus.Println(err)
@@ -86,37 +87,93 @@ func (h *Handler) oauthGoogleCallback(c *gin.Context) {
 		return
 	}
 
-	var userData = &app.UserGoogle{}
+	var userDataAPI = &app.UserGoogle{}
 
-	json.Unmarshal(data, userData)
+	json.Unmarshal(data, userDataAPI)
 
-	// создание пользователя в БД (или обновление, если уже создан)
-	idUser, err := h.service.CreateUserAPI("google", userData.Id, userData.FirstName, userData.LastName, userData.Email)
+	//logrus.Println("dayaUserGoogle: ", string(data))
+	logrus.Println("newUserGoogle: ", userDataAPI)
+
+	idUserAPI, err := h.service.ConvertID(userDataAPI.Id)
 	if err != nil {
-		logrus.Println(err)
+		logrus.Println("Handler/oauthGoogleCallback()/ConvertID()/ ошибка при конвертации idUser из строки в число: ", err)
 		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
 			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
 		})
 		return
 	}
 
-	// получение JWT по id пользователя
-	token, err := h.service.GenerateJWT_API(idUser)
+	// ГЕНЕРАЦИЯ JWT_API
+	tokenAPI, err := h.service.GenerateJWTbyID(idUserAPI)
 	if err != nil {
-		logrus.Println(err)
+		logrus.Println("Handler/oauthGoogleCallback()/GenerateJWTbyID(): ", err)
 		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
 			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
 		})
 		return
 	}
 
-	logrus.Printf("UserInfoGoogle: %s\n", userData)
-	logrus.Printf("JWT: %s\n", token)
+	user := &app.User{
+		FirstName: userDataAPI.FirstName,
+		LastName:  userDataAPI.LastName,
+		Email:     userDataAPI.Email,
+	}
 
-	// передача JWT токена пользователю
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+	// декодировка структуры пользователя в слайз байт для кэширования в redis
+	dataCash, err := json.Marshal(user)
+	if err != nil {
+		logrus.Println("Handler/oauthGoogleCallback()/Marshal()/ ошибка при декодировке данных пользователя: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	// запись данных о пользователе в кэш
+	// ключ в кэше - ID
+	err = h.service.SetUserCash(idUserAPI, dataCash)
+	if err != nil {
+		logrus.Println("Handler/oauthGoogleCallback()/SetUserCash()/ ошибка при записи данных в кэш: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	// отправка формы для получения отчества пользователя
+	c.HTML(http.StatusOK, "middle_names.html", gin.H{
+		"token": tokenAPI,
 	})
+
+	/*
+		// создание пользователя в БД (или обновление, если уже создан)
+		idUser, err := h.service.CreateUserAPI("google", userData.Id, userData.FirstName, userData.LastName, userData.Email)
+		if err != nil {
+			logrus.Println(err)
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+			})
+			return
+		}
+
+		// получение JWT по id пользователя
+		token, err := h.service.GenerateJWT_API(idUser)
+		if err != nil {
+			logrus.Println(err)
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+			})
+			return
+		}
+
+		logrus.Printf("UserInfoGoogle: %s\n", userData)
+		logrus.Printf("JWT: %s\n", token)
+
+		// передача JWT токена пользователю
+		c.JSON(http.StatusOK, gin.H{
+			"token": token,
+		})
+	*/
 }
 
 // создание Cookie
@@ -155,7 +212,7 @@ func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
 	// создание GET запроса с заголовком токена доступа для получения данных о пользователе
 	req, err := http.NewRequest("GET", oauthGoogleUrlAPI, http.NoBody)
 	if err != nil {
-		return nil, fmt.Errorf("not create GET request: %s", err.Error())
+		return nil, fmt.Errorf("getUserDataFromGoogle()/NewRequest()/ ошибка при создании GET запроса: %s", err.Error())
 	}
 
 	req.Header.Set("Authorization", "Bearer "+accessToken)
@@ -165,7 +222,7 @@ func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
 	// отправление GET запроса
 	response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return nil, fmt.Errorf("not create DO request: %s", err.Error())
+		return nil, fmt.Errorf("getUserDataFromGoogle()/Do()/ ошибка при отправке GET запроса: %s", err.Error())
 	}
 
 	// отправление GET запроса
@@ -179,7 +236,7 @@ func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
 	// чтение тела ответа на запрос GET
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
-		return nil, fmt.Errorf("failed read response by API Google: %s", err.Error())
+		return nil, fmt.Errorf("getUserDataFromGoogle()/ReadAll()/ ошибка при прочтении тела ответа: %s", err.Error())
 	}
 	return contents, nil
 }

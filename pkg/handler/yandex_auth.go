@@ -102,37 +102,131 @@ func (h *Handler) oauthYandexCallback(c *gin.Context) {
 		return
 	}
 
-	var userData = &app.UserYandex{}
+	var userDataAPI = &app.UserYandex{}
 
-	json.Unmarshal(dataAPIyandex, userData)
+	json.Unmarshal(dataAPIyandex, userDataAPI)
+	// logrus.Println("dataUserYandex: ", string(dataAPIyandex))
+	logrus.Println("newUserYandex: ", userDataAPI)
 
-	// создание пользователя в БД (или обновление, если уже создан)
-	idUser, err := h.service.CreateUserAPI("yandex", userData.Id, userData.FirstName, userData.LastName, userData.Email)
+	idUserAPI, err := h.service.ConvertID(userDataAPI.Id)
 	if err != nil {
-		logrus.Println(err)
+		logrus.Println("Handler/oauthYandexCallback()/ConvertID()/ ошибка при конвертации idUser из строки в число: ", err)
 		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
 			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
 		})
 		return
 	}
 
-	// получение JWT по id пользователя
-	token, err := h.service.GenerateJWT_API(idUser)
+	// ГЕНЕРАЦИЯ JWT_API
+	tokenAPI, err := h.service.GenerateJWTbyID(idUserAPI)
 	if err != nil {
-		logrus.Println(err.Error())
+		logrus.Println("Handler/oauthYandexCallback()/GenerateJWT_API(): ", err)
 		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
 			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
 		})
 		return
 	}
 
-	logrus.Printf("UserInfoYandex: %s\n", userData)
-	logrus.Printf("JWT: %s\n", token)
+	user := &app.User{
+		FirstName: userDataAPI.FirstName,
+		LastName:  userDataAPI.LastName,
+		Email:     userDataAPI.Email,
+	}
 
-	// передача JWT токена пользователю
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+	// декодировка структуры пользователя в слайз байт для кэширования в redis
+	dataCash, err := json.Marshal(user)
+	if err != nil {
+		logrus.Println("Handler/oauthYandexCallback()/Marshal()/ ошибка при декодировке данных пользователя: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	// запись данных о пользователе в кэш
+	// ключ в кэше - ID
+	err = h.service.SetUserCash(idUserAPI, dataCash)
+	if err != nil {
+		logrus.Println("Handler/oauthYandexCallback()/SetUserCash()/ ошибка при записи данных в кэш: ", err)
+		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	// отправка формы для получения отчества пользователя
+	c.HTML(http.StatusOK, "middle_names.html", gin.H{
+		"token": tokenAPI,
 	})
+
+	/*
+		// создание пользователя в БД (или обновление, если уже создан)
+		idUser, err := h.service.CreateUserAPI("yandex", userData.Id, userData.FirstName, userData.LastName, userData.Email)
+		if err != nil {
+			logrus.Println(err)
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+			})
+			return
+		}
+
+		// получение JWT по id пользователя
+		token, err := h.service.GenerateJWT_API(idUser)
+		if err != nil {
+			logrus.Println(err.Error())
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+			})
+			return
+		}
+
+		logrus.Printf("UserInfoYandex: %s\n", userData)
+		logrus.Printf("JWT: %s\n", token)
+
+		// передача JWT токена пользователю
+		c.JSON(http.StatusOK, gin.H{
+			"token": token,
+		})
+	*/
+}
+
+// запрос к API Google для получение данных о пользователе по access token`у
+func getUserDataFromYandex(c *gin.Context) ([]byte, error) {
+
+	// получение access token при помощи кода подтверждения
+	// accessToken, err := getAccessTokenFromYandex(c)
+	// if err != nil {
+	// 	return nil, fmt.Errorf("not received access token: %s", err.Error())
+	// }
+
+	accessToken, err := getAccessTokenFromYandex(c)
+	if err != nil {
+		return nil, err
+	}
+
+	// создание GET запроса с заголовком токена доступа для получения данных о пользователе
+	req, err := http.NewRequest("GET", oauthYandexUrlAPI, http.NoBody)
+	if err != nil {
+		return nil, fmt.Errorf("not create GET request: %s", err.Error())
+	}
+	req.Header.Set("Authorization", "OAuth "+accessToken)
+	// logrus.Printf("request Head = %s\n", req.Header.Get("Authorization"))
+	// logrus.Printf("request = %v\n", req)
+	// отправление GET запроса
+	response, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return nil, fmt.Errorf("not create DO request: %s", err.Error())
+	}
+
+	defer response.Body.Close()
+
+	// чтение тела ответа на запрос GET
+	contents, err := ioutil.ReadAll(response.Body)
+	if err != nil {
+		return nil, fmt.Errorf("failed read response by API Яндекс ID: %s", err.Error())
+	}
+
+	return contents, nil
 }
 
 // запрос к Яндекс.OAuth для получение access token при помощи кода подтверждения
@@ -192,45 +286,6 @@ func getAccessTokenFromYandex(c *gin.Context) (string, error) {
 	// написать продление токена, если нужно
 
 	return responceAccessToken.AccessToken, nil
-}
-
-// запрос к API Google для получение данных о пользователе по access token`у
-func getUserDataFromYandex(c *gin.Context) ([]byte, error) {
-
-	// получение access token при помощи кода подтверждения
-	// accessToken, err := getAccessTokenFromYandex(c)
-	// if err != nil {
-	// 	return nil, fmt.Errorf("not received access token: %s", err.Error())
-	// }
-
-	accessToken, err := getAccessTokenFromYandex(c)
-	if err != nil {
-		return nil, err
-	}
-
-	// создание GET запроса с заголовком токена доступа для получения данных о пользователе
-	req, err := http.NewRequest("GET", oauthYandexUrlAPI, http.NoBody)
-	if err != nil {
-		return nil, fmt.Errorf("not create GET request: %s", err.Error())
-	}
-	req.Header.Set("Authorization", "OAuth "+accessToken)
-	// logrus.Printf("request Head = %s\n", req.Header.Get("Authorization"))
-	// logrus.Printf("request = %v\n", req)
-	// отправление GET запроса
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		return nil, fmt.Errorf("not create DO request: %s", err.Error())
-	}
-
-	defer response.Body.Close()
-
-	// чтение тела ответа на запрос GET
-	contents, err := ioutil.ReadAll(response.Body)
-	if err != nil {
-		return nil, fmt.Errorf("failed read response by API Яндекс ID: %s", err.Error())
-	}
-
-	return contents, nil
 }
 
 // запрос для обновления access token

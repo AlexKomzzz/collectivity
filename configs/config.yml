@@ -12,6 +12,11 @@ db:
   port: "5432"
   dbname: "postgres"
 
+redis:
+  addr: "redis:6379"
+  password: ""
+  db: "0"
+
 email:
   host: "smtp.yandex.ru"
   #host: "komalex203@gmail.com"

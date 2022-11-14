@@ -36,6 +36,15 @@ services:
     networks:
       net-server:
         ipv4_address: 172.16.2.3
+  redis:
+    image: redis:latest
+    restart: always
+    container_name: redis
+    ports:
+      - 6379:6379
+    networks:
+      net-server:
+        ipv4_address: 172.16.2.4
   go-api:
     build:
       context: .
@@ -44,6 +53,7 @@ services:
     hostname: go-api
     depends_on:
       - db
+      - redis
     ports:
       - 8080:8080
     restart: always

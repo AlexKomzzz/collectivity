@@ -49,7 +49,14 @@ func main() {
 	}
 	defer db.Close()
 
-	repos := repository.NewRepository(db)
+	redisClient, err := repository.NewRedisCache(repository.ConfigRedis{ // Подключение к серверу Redis
+		Addr:     viper.GetString("redis.addr"),
+		Password: viper.GetString("redis.password"),
+		DB:       viper.GetInt("redis.db"),
+	})
+	defer redisClient.Close()
+
+	repos := repository.NewRepository(db, redisClient)
 	service := service.NewService(repos)
 	// handler := handler.NewHandler(service, handler.NewWebClient(make(map[string][]*websocket.Conn), context.Background()))
 	handler := handler.NewHandler(service)
