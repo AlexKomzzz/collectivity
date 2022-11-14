@@ -80,7 +80,7 @@ func (service *AuthService) CreateAdmin() error {
 
 // создание пользователя в БД регистрации (при создании нового пользователя, когда эл. почта не потверждена)
 // возвращяет id созданного пользователя из таблицы authdata
-func (service *AuthService) CreateUserByAuth(user *app.User, passRepeat string) (int, error) {
+/*func (service *AuthService) CreateUserByAuth(user *app.User, passRepeat string) (int, error) {
 
 	// захешим и сравним переданные пароли
 	err := service.CheckPass(&user.Password, &passRepeat)
@@ -89,7 +89,7 @@ func (service *AuthService) CreateUserByAuth(user *app.User, passRepeat string) 
 	}
 
 	return service.repos.CreateUserByAuth(user)
-}
+}*/
 
 // создание пользователя в БД (при создании нового пользователя и потверждении эл.почты)
 // возвращяет id созданного пользователя из таблицы users
@@ -105,9 +105,28 @@ func (service *AuthService) CreateUser(user *app.User) (int, error) {
 	}
 }
 
-// Проверка на отсутствие пользователя с таким email в БД
+// создание пользователя в БД auth (idUser уже известен)
+func (service *AuthService) CreateUserById(user *app.User) error {
+	return service.repos.CreateUserById(user)
+}
+
+// проверка на отсутствие пользователя с таким email в БД
 func (service *AuthService) CheckUserByEmail(email string) (bool, error) {
 	return service.repos.CheckUserByEmail(email)
+}
+
+// проверка на существование пользователя с таким ФИО в БД users и получение idUser
+func (service *AuthService) GetUserByUsername(username string) (int, error) {
+	ok, err := service.repos.CheckUser(username)
+	if err != nil {
+		return 0, err
+	}
+	if !ok {
+		return -1, nil
+	} else {
+		return service.repos.GetUserByUsername(username)
+
+	}
 }
 
 // хэширование и проверка паролей на соответсвие
@@ -136,6 +155,10 @@ func (service *AuthService) CreateUserAPI(typeAPI, idAPI, firstName, lastName, e
 
 // конвертация idUser из строки в число
 func (service *AuthService) ConvertID(idUser string) (int, error) {
+	if len(idUser) > 18 {
+		// обрезать до 17 символов
+		idUser = string([]byte(idUser)[:19])
+	}
 	return strconv.Atoi(idUser)
 }
 
@@ -145,9 +168,9 @@ func (service *AuthService) GetUserByEmail(email string) (int, error) {
 }
 
 // получение данных о пользователе (с неподтвержденным email) из БД authdata
-func (service *AuthService) GetUserFromAuth(idUserAuth int) (app.User, error) {
+/*func (service *AuthService) GetUserFromAuth(idUserAuth int) (app.User, error) {
 	return service.repos.GetUserFromAuth(idUserAuth)
-}
+}*/
 
 // получение данных о пользователе из кэша
 func (service *AuthService) GetUserCash(idUserAPI int) ([]byte, error) {
@@ -293,6 +316,16 @@ func (service *AuthService) ComparisonEmail(emailUser, emailURL string) error {
 	// Сравним emails
 	if emailUser != emailURL {
 		return errors.New("AuthService/ComparisonEmail(): emails не совпадают")
+	}
+
+	return nil
+}
+
+// сравнение idUser из JWT и из кэша
+func (service *AuthService) ComparisonId(idJWT, idCash int) error {
+
+	if idJWT != idCash {
+		return errors.New("AuthService/ComparisonId(): id не совпадают")
 	}
 
 	return nil

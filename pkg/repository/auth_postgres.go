@@ -11,9 +11,8 @@ import (
 
 const (
 	// названия таблиц в БД
-	DBusers    = "users"
-	DBauth     = "authdata"
-	DBauthuser = "auth"
+	DBusers = "users"
+	DBauth  = "auth"
 )
 
 type AuthPostgres struct {
@@ -40,7 +39,7 @@ func (r *AuthPostgres) CreateAdmin(admin app.User) error {
 	}
 
 	// создание админа в таблице auth
-	query = fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (id_user) DO UPDATE SET password_hash = EXCLUDED.password_hash, email=EXCLUDED.email", DBauthuser)
+	query = fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (email) DO UPDATE SET password_hash = EXCLUDED.password_hash, id_user=EXCLUDED.id_user", DBauth)
 
 	_, err = r.db.Exec(query, idAdmin, admin.Password, admin.Email)
 	if err != nil {
@@ -63,7 +62,7 @@ func (r *AuthPostgres) CreateUser(user *app.User) (int, error) {
 	}
 
 	// создание нового пользователя в БД auth
-	query := fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (email) DO NOTHING", DBauthuser)
+	query := fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (email) DO NOTHING", DBauth)
 
 	_, err = r.db.Exec(query, idUser, user.Password, user.Email)
 	if err != nil {
@@ -73,8 +72,23 @@ func (r *AuthPostgres) CreateUser(user *app.User) (int, error) {
 	return idUser, nil
 }
 
+// создание пользователя в БД auth (idUser уже известен)
+func (r *AuthPostgres) CreateUserById(user *app.User) error {
+
+	// создание нового пользователя в БД auth
+	// query := fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3) ON CONFLICT (email) DO NOTHING", DBauthuser)
+	query := fmt.Sprintf("INSERT INTO %s (id_user, password_hash, email) VALUES ($1, $2, $3)", DBauth)
+
+	_, err := r.db.Exec(query, user.Id, user.Password, user.Email)
+	if err != nil {
+		return errors.New("AuthPostgres/CreateUserById()/ошибка при записи данных в таблицу auth: " + err.Error())
+	}
+
+	return nil
+}
+
 // создание пользователя в БД регистрации (при создании нового пользователя, когда эл. почта не потверждена)
-func (r *AuthPostgres) CreateUserByAuth(user *app.User) (int, error) {
+/*func (r *AuthPostgres) CreateUserByAuth(user *app.User) (int, error) {
 
 	query := fmt.Sprintf("INSERT INTO %s (first_name, last_name, middle_name, password_hash, email) VALUES ($1, $2, $3, $4, $5) ON CONFLICT (email) DO UPDATE SET first_name = EXCLUDED.first_name, last_name=EXCLUDED.last_name, middle_name=EXCLUDED.middle_name, password_hash=EXCLUDED.password_hash RETURNING id", DBauth)
 
@@ -87,7 +101,7 @@ func (r *AuthPostgres) CreateUserByAuth(user *app.User) (int, error) {
 	}
 
 	return id, nil
-}
+}*/
 
 /*
 // создание пользователя в БД при авторизации через Google или Яндекс
@@ -124,13 +138,25 @@ func (r *AuthPostgres) CheckUser(username string) (bool, error) {
 // проверка на отсутствие пользователя с таким email в БД
 func (r *AuthPostgres) CheckUserByEmail(email string) (bool, error) {
 	var yes bool
-	query := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1)", DBauthuser)
+	query := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1)", DBauth)
 	err := r.db.Get(&yes, query, email)
 	if err != nil {
 		return false, errors.New("AuthPostgres/CheckUserByEmail()/ошибка при проверке на отсутствие пользователя в БД auth по email: " + err.Error())
 	}
 
 	return yes, err
+}
+
+// получение idUser по ФИО
+func (r *AuthPostgres) GetUserByUsername(username string) (int, error) {
+	var idUser int
+	query := fmt.Sprintf("SELECT id FROM %s WHERE username=$1", DBusers)
+	err := r.db.Get(&idUser, query, username)
+	if err != nil {
+		return 0, errors.New("AuthPostgres/CheckUserByEmail()/ошибка при проверке на отсутствие пользователя в БД auth по email: " + err.Error())
+	}
+
+	return idUser, err
 }
 
 // определение id пользователя по email и паролю
@@ -149,7 +175,7 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 	}
 	defer tx.Rollback()
 
-	queryYes := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1 AND password_hash=$2)", DBauthuser)
+	queryYes := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1 AND password_hash=$2)", DBauth)
 
 	// проверка на наличие пользователя в БД
 	row := tx.QueryRow(queryYes, email, password)
@@ -164,7 +190,7 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 		var yesEmail bool
 
 		// проверка на наличие пользователя в БД c таким email
-		queryEmail := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1)", DBauthuser)
+		queryEmail := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1)", DBauth)
 		row := tx.QueryRow(queryEmail, email)
 		err = row.Scan(&yesEmail)
 		if err != nil {
@@ -180,7 +206,7 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 			//  проверка по паролю
 			var yesPass bool
 
-			queryPass := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE password_hash=$1)", DBauthuser)
+			queryPass := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE password_hash=$1)", DBauth)
 			row := tx.QueryRow(queryPass, password)
 			err = row.Scan(&yesPass)
 			if err != nil {
@@ -200,7 +226,7 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 		}
 
 	} else {
-		query := fmt.Sprintf("SELECT id_user FROM %s WHERE email=$1 AND password_hash=$2", DBauthuser)
+		query := fmt.Sprintf("SELECT id_user FROM %s WHERE email=$1 AND password_hash=$2", DBauth)
 		row := tx.QueryRow(query, email, password)
 		err := row.Scan(&id)
 		if err != nil {
@@ -221,7 +247,7 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 }
 
 // получение данных о пользователе (с неподтвержденным email) из БД authdata
-func (r *AuthPostgres) GetUserFromAuth(idUserAuth int) (app.User, error) {
+/*func (r *AuthPostgres) GetUserFromAuth(idUserAuth int) (app.User, error) {
 	var dataUser app.User
 	// dataUser := app.User{
 	// 	Id: idUserAuth,
@@ -236,7 +262,7 @@ func (r *AuthPostgres) GetUserFromAuth(idUserAuth int) (app.User, error) {
 	}
 
 	return dataUser, nil
-}
+}*/
 
 // определение id пользователя по email и id для Google и Яндекс API
 // в переменную typeAPI необходимо передать 'google' либо 'yandex'
@@ -255,7 +281,7 @@ func (r *AuthPostgres) GetUserFromAuth(idUserAuth int) (app.User, error) {
 func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 	var yes bool
 	// проверка на наличие пользователя в БД
-	query := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1)", DBauthuser)
+	query := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE email=$1)", DBauth)
 	err := r.db.Get(&yes, query, email)
 	if err != nil {
 		return 0, errors.New("AuthPostgres/GetUserByEmail()/ ошибка при проверке наличия пользователя в таблице auth: " + err.Error())
@@ -266,26 +292,14 @@ func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 		return -1, errors.New("пользователь с данным email не зарегистирован")
 	}
 
-	queryGet := fmt.Sprintf("SELECT id FROM %s WHERE email=$1", DBauthuser)
-	var id int
-	err = r.db.Get(&id, queryGet, email)
+	queryGet := fmt.Sprintf("SELECT id_user FROM %s WHERE email=$1", DBauth)
+	var idUser int
+	err = r.db.Get(&idUser, queryGet, email)
 	if err != nil {
 		return 0, errors.New("AuthPostgres/GetUserByEmail()/ ошибка при определении id пользователя в таблице auth: " + err.Error())
 	}
 
-	return id, nil
-}
-
-// обновление пароля у пользователя
-func (r *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
-
-	query := fmt.Sprintf("UPDATE %s SET password_hash=$1 WHERE id_user=$2", DBauthuser)
-	_, err := r.db.Exec(query, newHashPsw, idUser)
-	if err != nil {
-		return errors.New("AuthPostgres/UpdatePass(): ошибка при обновлении пароля в БД: " + err.Error())
-	}
-
-	return nil
+	return idUser, nil
 }
 
 // проверка роли пользователя по id
@@ -296,6 +310,18 @@ func (r *AuthPostgres) GetRole(idUser int) (string, error) {
 	err := r.db.Get(&roleUser, query, idUser)
 
 	return roleUser, err
+}
+
+// обновление пароля у пользователя
+func (r *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
+
+	query := fmt.Sprintf("UPDATE %s SET password_hash=$1 WHERE id_user=$2", DBauth)
+	_, err := r.db.Exec(query, newHashPsw, idUser)
+	if err != nil {
+		return errors.New("AuthPostgres/UpdatePass(): ошибка при обновлении пароля в БД: " + err.Error())
+	}
+
+	return nil
 }
 
 /*

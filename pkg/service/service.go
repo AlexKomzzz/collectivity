@@ -12,23 +12,29 @@ type Authorization interface {
 	CreateAdmin() error
 	// создание пользователя в БД регистрации (при создании нового пользователя, когда эл. почта не потверждена)
 	// возвращяет id созданного пользователя из таблицы authdata
-	CreateUserByAuth(user *app.User, passRepeat string) (int, error)
+	// CreateUserByAuth(user *app.User, passRepeat string) (int, error)
+
 	// создание пользователя в БД (при создании нового пользователя и потверждении эл.почты)
 	// возвращяет id созданного пользователя из таблицы users
 	CreateUser(user *app.User) (int, error)
+	// создание пользователя в БД auth (idUser уже известен)
+	CreateUserById(user *app.User) error
 	// функция создания Пользователя при авторизации через Google или Яндекс
 	// в переменную typeAPI необходимо передать 'google' либо 'yandex'
 	//CreateUserAPI(typeAPI, idAPI, firstName, lastName, email string) (int, error)
+
 	// проверка на отсутствие пользователя с таким email в БД
 	CheckUserByEmail(email string) (bool, error)
 	// хэширование и проверка паролей на соответсвие
 	CheckPass(psw, refreshPsw *string) error
 	// конвертация idUser из строки в число
 	ConvertID(idUser string) (int, error)
+	// проверка на существование пользователя с таким ФИО в БД users и получение idUser
+	GetUserByUsername(username string) (int, error)
 	// определение idUser по email
 	GetUserByEmail(email string) (int, error)
 	// получение данных о пользователе (с неподтвержденным email) из БД authdata
-	GetUserFromAuth(idUserAuth int) (app.User, error)
+	//GetUserFromAuth(idUserAuth int) (app.User, error)
 	// получение данных о пользователе из кэша
 	GetUserCash(idUserAPI int) ([]byte, error)
 	// проверка роли пользователя по id
@@ -53,6 +59,8 @@ type Authorization interface {
 	UpdatePass(idUser int, newHashPsw string) error
 	// сравнение email полученного и сохраненного в БД
 	ComparisonEmail(emailUser, emailURL string) error
+	// сравнение idUser из JWT и из кэша
+	ComparisonId(idJWT, idCash int) error
 }
 
 type FileHanding interface {

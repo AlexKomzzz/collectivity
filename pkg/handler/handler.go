@@ -68,7 +68,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		})
 
 		// создание админа в БД
-		mux.GET("/admin", h.createAdm)
+		auth.GET("/admin", h.createAdm)
 
 		// создание пользователя при получении данных с помощью OAuth (Google или Яндекс)
 		auth.POST("/user-oauth", h.createUserOAuth)

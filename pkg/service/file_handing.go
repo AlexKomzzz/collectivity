@@ -87,7 +87,7 @@ func (service *FileService) ParseDataFileToDB() error {
 			}
 		}
 		client.Username = fmt.Sprintf("%s %s %s", client.LastName, client.FirstName, client.MiddleName)
-		logrus.Println(*client)
+		// logrus.Println(*client)
 
 		// запись данных пользователя в БД
 		err := service.repos.AddDebtByClient(client)

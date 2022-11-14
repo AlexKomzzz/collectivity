@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -24,18 +25,16 @@ func NewAuthRedis(redisClient *redis.Client) *AuthRedis {
 // добавление в кэш данных о пользователе с ключом idUser
 func (r *AuthRedis) SetUserCash(userIdAPI int, userData []byte) error {
 
-	status := r.redisClient.Set(fmt.Sprintf("user:%d", userIdAPI), userData, duration)
-
-	return status.Err()
+	return r.redisClient.Set(fmt.Sprintf("user:%d", userIdAPI), userData, duration).Err()
 }
 
 // получение из кэша данных о пользователе по ключу idUser
 func (r *AuthRedis) GetUserCash(userIdAPI int) ([]byte, error) {
 
-	status := r.redisClient.Get(fmt.Sprintf("user:%d", userIdAPI))
-	if status.Err() != nil {
-		return nil, status.Err()
+	val, err := r.redisClient.Get(fmt.Sprintf("user:%d", userIdAPI)).Result()
+	if err != nil {
+		return nil, errors.New("AuthRedis/GetUserCash()/ ошибка при получении данных о пользователе из кэша: " + err.Error())
 	}
 
-	return []byte(status.Val()), nil
+	return []byte(val), nil
 }
