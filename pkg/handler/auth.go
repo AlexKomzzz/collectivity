@@ -587,7 +587,7 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	}
 
 	// формирование URL
-	URL := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s", viper.GetString("url"), url.PathEscape(token))
+	URL := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s&email=%s", viper.GetString("url"), url.PathEscape(token), url.PathEscape(emailUser))
 	logrus.Printf("URL: %s", URL)
 
 	// текст письма
@@ -614,10 +614,19 @@ func (h *Handler) definitionUser(c *gin.Context) {
 // выделение токена из url, определение пользователя по JWT
 func (h *Handler) definitionUserJWT(c *gin.Context) {
 
-	// определение JWT из URL
+	// определение JWT и email из URL
 	token := c.Query("token")
 	if token == "" {
 		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие токена в URL при восстановлении пароля при переходде по ссылке с почты")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
+		return
+	}
+
+	emailUser := c.Query("email")
+	if emailUser == "" {
+		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие email в URL при восстановлении пароля при переходде по ссылке с почты")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -642,6 +651,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 		//	"id":     true,
 		"id":    true,
 		"token": token,
+		"email": emailUser,
 	})
 }
 
@@ -654,6 +664,16 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	token := c.Query("token")
 	if token == "" {
 		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие токена в URL при задании нового пароля")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
+		return
+	}
+
+	// определение email из URL
+	emailUser := c.Query("email")
+	if emailUser == "" {
+		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие email в URL при задании нового пароля")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -674,7 +694,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		return
 	}
 
-	// выделим новый пароль и повторный пароль и idUser из body
+	// выделим новый пароль и повторный пароль из body
 	// разделим поля данных в запросе
 	res := bytes.Split(body, []byte{13, 10})
 	for _, params := range res {
@@ -744,7 +764,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	}
 
 	// перезапишем новый пароль в БД
-	err = h.service.UpdatePass(idUser, psw)
+	err = h.service.UpdatePass(idUser, emailUser, psw)
 	if err != nil {
 		logrus.Println("Handler/recoveryPass(): ", err)
 		errorServerResponse(c, err)

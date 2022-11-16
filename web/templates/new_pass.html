@@ -101,7 +101,7 @@
                         <div class="error_title">{{ .msgErr }}</div>
                         {{ else }}
                         {{ end }}
-                        <form class="col s12" method="post" action="/auth/pass/recovery-pass?token={{ .token }}" enctype="text/plain">
+                        <form class="col s12" method="post" action="/auth/pass/recovery-pass?token={{ .token }}&email={{ .email }}" enctype="text/plain">
                             <div class='row'>
                                 <div class='col s12'>
                                 </div>

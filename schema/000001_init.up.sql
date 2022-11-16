@@ -29,7 +29,7 @@ CREATE TABLE auth
     id_user         int references users (id) on delete cascade         not null,
     -- id_google       varchar(255)    unique                      ,
     -- id_yandex       varchar(255)    unique                      ,
-    id_api          varchar(255)    unique                      ,
+    -- id_api          varchar(255)    unique                      ,
     password_hash   varchar(255)    not null                    ,
     email           varchar(255)    not null unique             
 );

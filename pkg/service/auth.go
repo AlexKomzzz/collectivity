@@ -308,9 +308,9 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 }
 
 // обновление пароля у пользователя
-func (service *AuthService) UpdatePass(idUser int, newHashPsw string) error {
+func (service *AuthService) UpdatePass(idUser int, emailUser, newHashPsw string) error {
 
-	return service.repos.UpdatePass(idUser, newHashPsw)
+	return service.repos.UpdatePass(idUser, emailUser, newHashPsw)
 }
 
 // сравнение email полученного и сохраненного в БД

@@ -56,7 +56,7 @@ type Authorization interface {
 	// отправка сообщения пользователю на почту для передачи ссылки
 	SendMessageByMail(emailUser, url, msg string) error
 	// обновление пароля у пользователя
-	UpdatePass(idUser int, newHashPsw string) error
+	UpdatePass(idUser int, emailUser, newHashPsw string) error
 	// сравнение email полученного и сохраненного в БД
 	ComparisonEmail(emailUser, emailURL string) error
 	// сравнение idUser из JWT и из кэша

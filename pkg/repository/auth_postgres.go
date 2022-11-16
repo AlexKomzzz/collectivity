@@ -315,10 +315,10 @@ func (r *AuthPostgres) GetRole(idUser int) (string, error) {
 }
 
 // обновление пароля у пользователя
-func (r *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
+func (r *AuthPostgres) UpdatePass(idUser int, emailUser, newHashPsw string) error {
 
-	query := fmt.Sprintf("UPDATE %s SET password_hash=$1 WHERE id_user=$2", DBauth)
-	_, err := r.db.Exec(query, newHashPsw, idUser)
+	query := fmt.Sprintf("UPDATE %s SET password_hash=$1 WHERE id_user=$2 AND email=$3", DBauth)
+	_, err := r.db.Exec(query, newHashPsw, idUser, emailUser)
 	if err != nil {
 		return errors.New("AuthPostgres/UpdatePass(): ошибка при обновлении пароля в БД: " + err.Error())
 	}
