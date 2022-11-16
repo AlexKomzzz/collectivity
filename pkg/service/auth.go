@@ -188,13 +188,16 @@ func (service *AuthService) GenerateJWT(email, password string) (string, error) 
 	// определим id пользователя
 	idUser, err := service.repos.GetUser(email, generatePasswordHash(password))
 	if err != nil {
-		return "", err
+		return "", errors.New("AuthService/GenerateJWT()/GetUser(): " + err.Error())
 	}
 	if idUser == -1 {
 		return "", errors.New("нет пользователя")
 	} else if idUser == -2 {
 		return "", errors.New("пароль")
 	}
+	// else if idUser == -3 {
+	// 	return "", errors.New("api")
+	// }
 
 	return generateJWT(idUser)
 }

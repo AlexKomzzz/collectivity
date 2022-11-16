@@ -203,26 +203,28 @@ func (r *AuthPostgres) GetUser(email, password string) (int, error) {
 			tx.Rollback()
 			return -1, nil
 		} else {
-			//  проверка по паролю
-			var yesPass bool
+			/*
+				//  проверка по паролю
+				var yesPass bool
 
-			queryPass := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE password_hash=$1)", DBauth)
-			row := tx.QueryRow(queryPass, password)
-			err = row.Scan(&yesPass)
-			if err != nil {
-				tx.Rollback()
-				return 0, err
-			}
+				queryPass := fmt.Sprintf("SELECT EXISTS (SELECT id_user FROM %s WHERE password_hash=$1)", DBauth)
+				row := tx.QueryRow(queryPass, password)
+				err = row.Scan(&yesPass)
+				if err != nil {
+					tx.Rollback()
+					return 0, err
+				}
 
-			if !yesPass {
-				// значит неправильно набран пароль
-				tx.Rollback()
-				return -2, nil
-			} else {
+				if !yesPass {*/
+			// значит неправильно набран пароль
+			tx.Rollback()
+			return -2, nil
+			/*} else {
 				// такого случая быть не должно
 				tx.Rollback()
-				return 0, errors.New("ошибка БД при проверке пользователя по email и паролю")
+				return -3, nil
 			}
+			*/
 		}
 
 	} else {

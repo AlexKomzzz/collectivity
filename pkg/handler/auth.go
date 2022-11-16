@@ -159,7 +159,7 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 // получение данных при создании нового пользователя, запись в БД регистрации, отправка ссылки с токеном и email на почту для подтверждения эл.почты
 func (h *Handler) signUp(c *gin.Context) { // Обработчик для регистрации
 
-	var dataUser app.User
+	dataUser := &app.User{}
 	var passRepeat string
 
 	// ContentType = text/plain
@@ -505,6 +505,10 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
 				"error": "Неверный пароль. Попробуйте снова.",
 			})
+			// } else if err.Error() == "api" {
+			// 	c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			// 		"error": "Для входа в аккаунт с данной эл. почтой используйте кнопки входа через Google или Яндекс почту",
+			// 	})
 		} else {
 			logrus.Println("Handler/signIn(): ", err)
 			errorServerResponse(c, err)
