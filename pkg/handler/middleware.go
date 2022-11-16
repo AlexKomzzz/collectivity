@@ -20,14 +20,7 @@ func (h *Handler) userIdentity(c *gin.Context) (int, error) {
 		return -1, errors.New("empty auth header")
 	}
 
-	idUser, err := h.service.ValidToken(header)
-	if err != nil {
-		// newErrorResponse(c, http.StatusUnauthorized, err.Error())
-		return -1, err
-	}
-
-	// c.Set(userCtx, userId)
-	return idUser, nil
+	return h.service.ValidToken(header)
 }
 
 /*

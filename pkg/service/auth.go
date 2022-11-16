@@ -26,7 +26,7 @@ const (
 
 	SOLT            = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
 	tokenTTL        = 300 * time.Hour               // время жизни токена аутентификации
-	tokenTTLtoEmail = 15 * time.Minute              // время жизни токена при восстановлении пароля или подтверждении почты
+	tokenTTLtoEmail = 15 * time.Second              // время жизни токена при восстановлении пароля или подтверждении почты
 	JWT_SECRET      = "rkjk#4#%35FSFJlja#4353KSFjH" // секрет для JWT
 	JWTemail_SECRET = "r2sk#4#gdfoij743*#weg(FjH"   // секрет для токена при восстановлении пароля и подтверждения почты
 )
@@ -226,7 +226,7 @@ func (service *AuthService) ValidToken(headerAuth string) (int, error) {
 
 	headerParts := strings.Split(headerAuth, " ")
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" || headerParts[1] == "" {
-		return -1, errors.New("invalid auth header")
+		return 0, errors.New("AuthService/ValidToken(): invalid auth header")
 	}
 
 	return service.ParseToken(headerParts[1])
@@ -241,7 +241,7 @@ func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 		return []byte(JWT_SECRET), nil
 	})
 	if err != nil {
-		return 0, err
+		return -1, errors.New("AuthService/ParseToken():" + err.Error())
 	}
 
 	claims, ok := token.Claims.(*tokenClaims)
@@ -261,7 +261,7 @@ func (service *AuthService) ParseTokenEmail(accesstoken string) (int, error) {
 		return []byte(JWTemail_SECRET), nil
 	})
 	if err != nil {
-		return 0, errors.New("AuthService/ParseTokenEmail()/ParseWithClaims(): " + err.Error())
+		return -1, errors.New("AuthService/ParseTokenEmail()/ParseWithClaims(): " + err.Error())
 	}
 
 	claims, ok := token.Claims.(*tokenClaims)

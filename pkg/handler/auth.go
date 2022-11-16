@@ -86,9 +86,15 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 	idUserAPI, err := h.service.ParseToken(tokenAPI)
 	if err != nil {
 		logrus.Println("Handler/createUserOAuth()/ParseToken()/ ошибка при парсе JWT: ", err)
-		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
-			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
-		})
+		if idUserAPI == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+			})
+		}
 		return
 	}
 
@@ -386,7 +392,13 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	idUser, err := h.service.ParseTokenEmail(tokenVerific)
 	if err != nil {
 		logrus.Println("Handler/signAdd(): ", err)
-		errorServerResponse(c, err)
+		if idUser == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			errorServerResponse(c, err)
+		}
 		return
 	}
 
@@ -634,12 +646,18 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 	}
 
 	// определяем пользователя по JWT
-	_, err := h.service.ParseTokenEmail(token)
+	idUser, err := h.service.ParseTokenEmail(token)
 	if err != nil {
 		logrus.Println("Handler/definitionUserJWT(): ", err)
-		c.HTML(http.StatusBadRequest, "login.html", gin.H{
-			"error": "Ошибка запроса. Повторите процедуру.",
-		})
+		if idUser == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Ошибка запроса. Повторите процедуру.",
+			})
+		}
 		return
 	}
 
@@ -743,10 +761,17 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// определяем пользователя по JWT
 	idUser, err := h.service.ParseTokenEmail(token)
 	if err != nil {
-		logrus.Println(err)
-		c.HTML(http.StatusBadRequest, "login.html", gin.H{
-			"error": "Ошибка запроса. Повторите процедуру.",
-		})
+		logrus.Println("Handler/recoveryPass()/ParseTokenEmail():", err)
+
+		if idUser == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Ошибка запроса. Повторите процедуру.",
+			})
+		}
 		return
 	}
 

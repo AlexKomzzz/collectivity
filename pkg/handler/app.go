@@ -14,7 +14,16 @@ func (h *Handler) startList(c *gin.Context) {
 	idUser, err := h.userIdentity(c)
 	if err != nil {
 		logrus.Println("Вход без идентификации")
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
+		logrus.Println("Handler/startList()/userIdentity(): ", err)
+		if idUser == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Ошибка запроса. Повторите процедуру.",
+			})
+		}
 		return
 	}
 
