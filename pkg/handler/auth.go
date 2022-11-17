@@ -16,6 +16,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const startList = "http://localhost:8080/startList?token="
+
 // создание админа
 func (h *Handler) createAdm(c *gin.Context) {
 	err := h.service.CreateAdmin()
@@ -157,9 +159,11 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 	logrus.Printf("JWT для пользователя %d: %s\n", idUser, token)
 
 	// передача JWT токена пользователю
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"token": token,
+	// })
+
+	c.Redirect(http.StatusTemporaryRedirect, startList+token)
 }
 
 // получение данных при создании нового пользователя, запись в БД регистрации, отправка ссылки с токеном и email на почту для подтверждения эл.почты
@@ -459,17 +463,24 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	logrus.Println("Создан новый пользователь: ", idUser)
 
 	// генерация JWT по id
-	token, err := h.service.GenerateJWTbyID(idUser)
-	if err != nil {
-		logrus.Println("ошибка при генерации JWT в signAdd: ", err)
-		errorServerResponse(c, err)
-		return
-	}
+	// token, err := h.service.GenerateJWTbyID(idUser)
+	// if err != nil {
+	// 	logrus.Println("ошибка при генерации JWT в signAdd: ", err)
+	// 	errorServerResponse(c, err)
+	// 	return
+	// }
+	// редирект на стартовую страницу
+	// c.Redirect(http.StatusTemporaryRedirect, startList+token)
 
 	// выдача JWT
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"token": token,
+	// })
+
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"msg": "Пользователь успешно создан. Войдите с помощью электронной почты и пароля",
 	})
+
 }
 
 // аутентификация пользователя, выдача JWT
@@ -529,9 +540,12 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"token": token,
+	// })
+
+	// редирект на стартовую страницу
+	c.Redirect(http.StatusTemporaryRedirect, startList+token)
 }
 
 // определение пользователя по email при восстановлении пароля, отправка письма на почту с токеном

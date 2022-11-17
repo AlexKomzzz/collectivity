@@ -26,7 +26,7 @@ const (
 
 	SOLT            = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
 	tokenTTL        = 300 * time.Hour               // время жизни токена аутентификации
-	tokenTTLtoEmail = 15 * time.Second              // время жизни токена при восстановлении пароля или подтверждении почты
+	tokenTTLtoEmail = 15 * time.Minute              // время жизни токена при восстановлении пароля или подтверждении почты
 	JWT_SECRET      = "rkjk#4#%35FSFJlja#4353KSFjH" // секрет для JWT
 	JWTemail_SECRET = "r2sk#4#gdfoij743*#weg(FjH"   // секрет для токена при восстановлении пароля и подтверждения почты
 )
@@ -177,10 +177,16 @@ func (service *AuthService) GetUserCash(idUserAPI int) ([]byte, error) {
 	return service.repos.GetUserCash(idUserAPI)
 }
 
-// проверка роли пользователя по id
+// Определение роли пользователя по id
 func (service *AuthService) GetRole(idUser int) (string, error) {
 
 	return service.repos.GetRole(idUser)
+}
+
+// определение долга пользователя
+func (service *AuthService) GetDebtUser(idUser int) (string, error) {
+
+	return service.repos.GetDebtUser(idUser)
 }
 
 // генерация JWT по email и паролю

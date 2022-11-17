@@ -304,7 +304,7 @@ func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 	return idUser, nil
 }
 
-// проверка роли пользователя по id
+// опрееделение роли пользователя по id
 func (r *AuthPostgres) GetRole(idUser int) (string, error) {
 	var roleUser string
 
@@ -312,6 +312,16 @@ func (r *AuthPostgres) GetRole(idUser int) (string, error) {
 	err := r.db.Get(&roleUser, query, idUser)
 
 	return roleUser, err
+}
+
+// определение долго пользователя
+func (r *AuthPostgres) GetDebtUser(idUser int) (string, error) {
+	var debtUser string
+
+	query := "SELECT debt FROM users WHERE id=$1"
+	err := r.db.Get(&debtUser, query, idUser)
+
+	return debtUser, err
 }
 
 // обновление пароля у пользователя

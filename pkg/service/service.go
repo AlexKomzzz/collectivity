@@ -37,8 +37,10 @@ type Authorization interface {
 	//GetUserFromAuth(idUserAuth int) (app.User, error)
 	// получение данных о пользователе из кэша
 	GetUserCash(idUserAPI int) ([]byte, error)
-	// проверка роли пользователя по id
+	// определение роли пользователя по id
 	GetRole(idUser int) (string, error)
+	// определение долга пользователя
+	GetDebtUser(idUser int) (string, error)
 	// генерация JWT по email и паролю
 	GenerateJWT(email, password string) (string, error)
 	// генерация JWT с указанием idUser

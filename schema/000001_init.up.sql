@@ -20,7 +20,7 @@ CREATE TABLE users
     first_name      varchar(255)    not null                    , -- имя
     last_name       varchar(255)    not null                    , -- фамилия
     middle_name     varchar(255)                                , -- отчество
-    role_user       varchar(255)                                ,  -- роль (напр. admin)
+    role_user       varchar(255)    DEFAULT ''                  ,  -- роль (напр. admin)
     debt            varchar(255)
 );
 

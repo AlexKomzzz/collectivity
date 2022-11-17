@@ -34,8 +34,10 @@ type Authorization interface {
 	GetUserByEmail(email string) (int, error)
 	// обновление пароля у пользователя
 	UpdatePass(idUser int, emailUser, newHashPsw string) error
-	// проверка роли пользователя по id
+	// определение роли пользователя по id
 	GetRole(idUser int) (string, error)
+	// определение долго пользователя
+	GetDebtUser(idUser int) (string, error)
 	// определение id пользователя по email и id для Google и Яндекс API
 	// в переменную typeAPI необходимо передать 'google' либо 'yandex'
 	// GetUserAPI(typeAPI, idAPI, email string) (int, error)
