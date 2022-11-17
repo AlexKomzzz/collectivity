@@ -19,6 +19,10 @@
 		{{ else }}
 			<p> Hello, man</p>
 		{{ end }}
+		{{ if .resp }}
+		<p> Ваш долг составляет: {{ .debt }}</p>
+		{{ else }}
+		{{ end }}
 	</div>
 </body>
 </html>

@@ -43,6 +43,10 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 	// 	api.StaticFile("/", "./web/templates/start_list.html")
 	// }
 
+	// Стартовая страница для пользователей
+	mux.GET("/startList", h.startList)
+	mux.POST("/startList", h.startList)
+
 	// работа с файлами
 	files := mux.Group("/files")
 	{

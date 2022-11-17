@@ -304,7 +304,7 @@ func (r *AuthPostgres) GetUserByEmail(email string) (int, error) {
 	return idUser, nil
 }
 
-// проверка роли пользователя по id
+// опрееделение роли пользователя по id
 func (r *AuthPostgres) GetRole(idUser int) (string, error) {
 	var roleUser string
 
@@ -314,11 +314,21 @@ func (r *AuthPostgres) GetRole(idUser int) (string, error) {
 	return roleUser, err
 }
 
-// обновление пароля у пользователя
-func (r *AuthPostgres) UpdatePass(idUser int, newHashPsw string) error {
+// определение долго пользователя
+func (r *AuthPostgres) GetDebtUser(idUser int) (string, error) {
+	var debtUser string
 
-	query := fmt.Sprintf("UPDATE %s SET password_hash=$1 WHERE id_user=$2", DBauth)
-	_, err := r.db.Exec(query, newHashPsw, idUser)
+	query := "SELECT debt FROM users WHERE id=$1"
+	err := r.db.Get(&debtUser, query, idUser)
+
+	return debtUser, err
+}
+
+// обновление пароля у пользователя
+func (r *AuthPostgres) UpdatePass(idUser int, emailUser, newHashPsw string) error {
+
+	query := fmt.Sprintf("UPDATE %s SET password_hash=$1 WHERE id_user=$2 AND email=$3", DBauth)
+	_, err := r.db.Exec(query, newHashPsw, idUser, emailUser)
 	if err != nil {
 		return errors.New("AuthPostgres/UpdatePass(): ошибка при обновлении пароля в БД: " + err.Error())
 	}

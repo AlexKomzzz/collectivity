@@ -177,10 +177,16 @@ func (service *AuthService) GetUserCash(idUserAPI int) ([]byte, error) {
 	return service.repos.GetUserCash(idUserAPI)
 }
 
-// проверка роли пользователя по id
+// Определение роли пользователя по id
 func (service *AuthService) GetRole(idUser int) (string, error) {
 
 	return service.repos.GetRole(idUser)
+}
+
+// определение долга пользователя
+func (service *AuthService) GetDebtUser(idUser int) (string, error) {
+
+	return service.repos.GetDebtUser(idUser)
 }
 
 // генерация JWT по email и паролю
@@ -226,7 +232,7 @@ func (service *AuthService) ValidToken(headerAuth string) (int, error) {
 
 	headerParts := strings.Split(headerAuth, " ")
 	if len(headerParts) != 2 || headerParts[0] != "Bearer" || headerParts[1] == "" {
-		return -1, errors.New("invalid auth header")
+		return 0, errors.New("AuthService/ValidToken(): invalid auth header")
 	}
 
 	return service.ParseToken(headerParts[1])
@@ -241,7 +247,7 @@ func (service *AuthService) ParseToken(accesstoken string) (int, error) {
 		return []byte(JWT_SECRET), nil
 	})
 	if err != nil {
-		return 0, err
+		return -1, errors.New("AuthService/ParseToken():" + err.Error())
 	}
 
 	claims, ok := token.Claims.(*tokenClaims)
@@ -261,7 +267,7 @@ func (service *AuthService) ParseTokenEmail(accesstoken string) (int, error) {
 		return []byte(JWTemail_SECRET), nil
 	})
 	if err != nil {
-		return 0, errors.New("AuthService/ParseTokenEmail()/ParseWithClaims(): " + err.Error())
+		return -1, errors.New("AuthService/ParseTokenEmail()/ParseWithClaims(): " + err.Error())
 	}
 
 	claims, ok := token.Claims.(*tokenClaims)
@@ -308,9 +314,9 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 }
 
 // обновление пароля у пользователя
-func (service *AuthService) UpdatePass(idUser int, newHashPsw string) error {
+func (service *AuthService) UpdatePass(idUser int, emailUser, newHashPsw string) error {
 
-	return service.repos.UpdatePass(idUser, newHashPsw)
+	return service.repos.UpdatePass(idUser, emailUser, newHashPsw)
 }
 
 // сравнение email полученного и сохраненного в БД

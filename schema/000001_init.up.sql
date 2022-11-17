@@ -20,7 +20,7 @@ CREATE TABLE users
     first_name      varchar(255)    not null                    , -- имя
     last_name       varchar(255)    not null                    , -- фамилия
     middle_name     varchar(255)                                , -- отчество
-    role_user       varchar(255)                                ,  -- роль (напр. admin)
+    role_user       varchar(255)    DEFAULT ''                  ,  -- роль (напр. admin)
     debt            varchar(255)
 );
 
@@ -29,7 +29,7 @@ CREATE TABLE auth
     id_user         int references users (id) on delete cascade         not null,
     -- id_google       varchar(255)    unique                      ,
     -- id_yandex       varchar(255)    unique                      ,
-    id_api          varchar(255)    unique                      ,
+    -- id_api          varchar(255)    unique                      ,
     password_hash   varchar(255)    not null                    ,
     email           varchar(255)    not null unique             
 );

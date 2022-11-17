@@ -1,8 +1,6 @@
 -- DROP TABLE debts;
 DROP TABLE auth;
 
-DROP TABLE authdata;
-
 DROP TABLE users;
 
 -- DROP TABLE lists_items;

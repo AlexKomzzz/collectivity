@@ -11,10 +11,41 @@ import (
 func (h *Handler) startList(c *gin.Context) {
 
 	// идентифицируем пользователя
-	idUser, err := h.userIdentity(c)
-	if err != nil {
+	// idUser, err := h.userIdentity(c)
+	// if err != nil {
+	// 	if idUser == -1 {
+	// 		logrus.Println("Вход c протухшим JWT")
+	// 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+	// 			"error": "Истекло выделенное время, повторите процедуру",
+	// 		})
+	// 	} else {
+	// 		logrus.Println("Вход без идентификации")
+	// 		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
+	// 	}
+	// 	return
+	// }
+
+	// получение токена из URL
+	// определение JWT и email из URL
+	token := c.Query("token")
+	if token == "" {
 		logrus.Println("Вход без идентификации")
-		c.Redirect(http.StatusTemporaryRedirect, "/auth/login")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+		return
+	}
+
+	// парсинг токена
+	idUser, err := h.service.ParseToken(token)
+	if err != nil {
+		if idUser == -1 {
+			logrus.Println("Вход c протухшим JWT")
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, введите электронный адрес и пароль для входа",
+			})
+		} else {
+			logrus.Println("Вход без идентификации")
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+		}
 		return
 	}
 
@@ -33,9 +64,22 @@ func (h *Handler) startList(c *gin.Context) {
 			"role": true,
 		})
 		return
-	} else {
-		logrus.Println("обычный пользователь")
-		c.HTML(http.StatusOK, "start_list.html", gin.H{})
+	}
+
+	logrus.Println("Вход пользователя: ", idUser)
+
+	// определения debt для пользователя
+	debtUser, err := h.service.GetDebtUser(idUser)
+	if err != nil {
+		logrus.Println("Handler/startList()/GetDebtUser(): ошибка при определении долга пользователя при входе на стартовую страницу: ", err)
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
 		return
 	}
+
+	c.HTML(http.StatusOK, "start_list.html", gin.H{
+		"resp": true,
+		"debt": debtUser,
+	})
 }

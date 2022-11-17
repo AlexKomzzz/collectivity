@@ -16,6 +16,8 @@ import (
 	"github.com/spf13/viper"
 )
 
+const startList = "http://localhost:8080/startList?token="
+
 // создание админа
 func (h *Handler) createAdm(c *gin.Context) {
 	err := h.service.CreateAdmin()
@@ -86,9 +88,15 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 	idUserAPI, err := h.service.ParseToken(tokenAPI)
 	if err != nil {
 		logrus.Println("Handler/createUserOAuth()/ParseToken()/ ошибка при парсе JWT: ", err)
-		c.HTML(http.StatusInternalServerError, "login.html", gin.H{
-			"error": "Непредвиденная ошибка, пожалуйста, повторите.",
-		})
+		if idUserAPI == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			c.HTML(http.StatusInternalServerError, "login.html", gin.H{
+				"error": "Непредвиденная ошибка, пожалуйста, повторите.",
+			})
+		}
 		return
 	}
 
@@ -151,9 +159,11 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 	logrus.Printf("JWT для пользователя %d: %s\n", idUser, token)
 
 	// передача JWT токена пользователю
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"token": token,
+	// })
+
+	c.Redirect(http.StatusTemporaryRedirect, startList+token)
 }
 
 // получение данных при создании нового пользователя, запись в БД регистрации, отправка ссылки с токеном и email на почту для подтверждения эл.почты
@@ -386,7 +396,13 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	idUser, err := h.service.ParseTokenEmail(tokenVerific)
 	if err != nil {
 		logrus.Println("Handler/signAdd(): ", err)
-		errorServerResponse(c, err)
+		if idUser == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			errorServerResponse(c, err)
+		}
 		return
 	}
 
@@ -447,17 +463,24 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	logrus.Println("Создан новый пользователь: ", idUser)
 
 	// генерация JWT по id
-	token, err := h.service.GenerateJWTbyID(idUser)
-	if err != nil {
-		logrus.Println("ошибка при генерации JWT в signAdd: ", err)
-		errorServerResponse(c, err)
-		return
-	}
+	// token, err := h.service.GenerateJWTbyID(idUser)
+	// if err != nil {
+	// 	logrus.Println("ошибка при генерации JWT в signAdd: ", err)
+	// 	errorServerResponse(c, err)
+	// 	return
+	// }
+	// редирект на стартовую страницу
+	// c.Redirect(http.StatusTemporaryRedirect, startList+token)
 
 	// выдача JWT
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"token": token,
+	// })
+
+	c.HTML(http.StatusOK, "login.html", gin.H{
+		"msg": "Пользователь успешно создан. Войдите с помощью электронной почты и пароля",
 	})
+
 }
 
 // аутентификация пользователя, выдача JWT
@@ -517,9 +540,12 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
-		"token": token,
-	})
+	// c.JSON(http.StatusOK, gin.H{
+	// 	"token": token,
+	// })
+
+	// редирект на стартовую страницу
+	c.Redirect(http.StatusTemporaryRedirect, startList+token)
 }
 
 // определение пользователя по email при восстановлении пароля, отправка письма на почту с токеном
@@ -587,7 +613,7 @@ func (h *Handler) definitionUser(c *gin.Context) {
 	}
 
 	// формирование URL
-	URL := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s", viper.GetString("url"), url.PathEscape(token))
+	URL := fmt.Sprintf("%s/auth/pass/definition-userJWT?token=%s&email=%s", viper.GetString("url"), url.PathEscape(token), url.PathEscape(emailUser))
 	logrus.Printf("URL: %s", URL)
 
 	// текст письма
@@ -614,7 +640,7 @@ func (h *Handler) definitionUser(c *gin.Context) {
 // выделение токена из url, определение пользователя по JWT
 func (h *Handler) definitionUserJWT(c *gin.Context) {
 
-	// определение JWT из URL
+	// определение JWT и email из URL
 	token := c.Query("token")
 	if token == "" {
 		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие токена в URL при восстановлении пароля при переходде по ссылке с почты")
@@ -624,13 +650,28 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 		return
 	}
 
-	// определяем пользователя по JWT
-	_, err := h.service.ParseTokenEmail(token)
-	if err != nil {
-		logrus.Println("Handler/definitionUserJWT(): ", err)
+	emailUser := c.Query("email")
+	if emailUser == "" {
+		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие email в URL при восстановлении пароля при переходде по ссылке с почты")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
+		return
+	}
+
+	// определяем пользователя по JWT
+	idUser, err := h.service.ParseTokenEmail(token)
+	if err != nil {
+		logrus.Println("Handler/definitionUserJWT(): ", err)
+		if idUser == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Ошибка запроса. Повторите процедуру.",
+			})
+		}
 		return
 	}
 
@@ -642,6 +683,7 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 		//	"id":     true,
 		"id":    true,
 		"token": token,
+		"email": emailUser,
 	})
 }
 
@@ -654,6 +696,16 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	token := c.Query("token")
 	if token == "" {
 		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие токена в URL при задании нового пароля")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{
+			"error": "Ошибка запроса. Повторите процедуру.",
+		})
+		return
+	}
+
+	// определение email из URL
+	emailUser := c.Query("email")
+	if emailUser == "" {
+		logrus.Println("Handler/definitionUserJWT()/Query(): отсутствие email в URL при задании нового пароля")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
 			"error": "Ошибка запроса. Повторите процедуру.",
 		})
@@ -674,7 +726,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		return
 	}
 
-	// выделим новый пароль и повторный пароль и idUser из body
+	// выделим новый пароль и повторный пароль из body
 	// разделим поля данных в запросе
 	res := bytes.Split(body, []byte{13, 10})
 	for _, params := range res {
@@ -723,10 +775,17 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// определяем пользователя по JWT
 	idUser, err := h.service.ParseTokenEmail(token)
 	if err != nil {
-		logrus.Println(err)
-		c.HTML(http.StatusBadRequest, "login.html", gin.H{
-			"error": "Ошибка запроса. Повторите процедуру.",
-		})
+		logrus.Println("Handler/recoveryPass()/ParseTokenEmail():", err)
+
+		if idUser == -1 {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло выделенное время, повторите процедуру",
+			})
+		} else {
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Ошибка запроса. Повторите процедуру.",
+			})
+		}
 		return
 	}
 
@@ -744,7 +803,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	}
 
 	// перезапишем новый пароль в БД
-	err = h.service.UpdatePass(idUser, psw)
+	err = h.service.UpdatePass(idUser, emailUser, psw)
 	if err != nil {
 		logrus.Println("Handler/recoveryPass(): ", err)
 		errorServerResponse(c, err)
