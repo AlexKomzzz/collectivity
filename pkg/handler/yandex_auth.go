@@ -220,6 +220,11 @@ func getUserDataFromYandex(c *gin.Context) ([]byte, error) {
 
 	defer response.Body.Close()
 
+	// Проверка кода ответа
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("getUserDataFromYandex()/Do()/ ошибка при получении ланных о пользователе от Яндекс API: %s", err.Error())
+	}
+
 	// чтение тела ответа на запрос GET
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
@@ -272,6 +277,11 @@ func getAccessTokenFromYandex(c *gin.Context) (string, error) {
 	}
 
 	defer response.Body.Close()
+
+	// Проверка кода ответа
+	if response.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("getAccessTokenFromYandex()/Do()/ ошибка при получении токена: %s", err.Error())
+	}
 
 	// чтение тела ответа на запрос Post
 	contents, err := ioutil.ReadAll(response.Body)
