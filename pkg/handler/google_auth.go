@@ -233,6 +233,11 @@ func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
 	// }
 	defer response.Body.Close()
 
+	// Проверка кода ответа
+	if response.StatusCode != http.StatusOK {
+		return nil, fmt.Errorf("getUserDataFromGoogle()/Do()/ ошибка при получении токена: %s", err.Error())
+	}
+
 	// чтение тела ответа на запрос GET
 	contents, err := ioutil.ReadAll(response.Body)
 	if err != nil {
