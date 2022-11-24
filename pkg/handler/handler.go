@@ -110,6 +110,17 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 			yandex.GET("/login", h.oauthYandexLogin)
 			yandex.GET("/callback", h.oauthYandexCallback)
 		}
+
+		// авторизация и регистрация для тлг бота
+		tlg_bot := auth.Group("/tlg")
+		{
+			// отправка формы авторизации
+			tlg_bot.GET("/login", h.loginBot)
+			// получение данных при авторизации от пользователя
+			tlg_bot.POST("/sign-in", h.signInBot)
+			// запрос данных
+			//tlg_bot.POST("/debt", h.getDataBot)
+		}
 	}
 
 	return mux, nil
