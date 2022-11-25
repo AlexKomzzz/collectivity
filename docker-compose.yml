@@ -74,6 +74,24 @@ services:
   #     - etc-letsencrypt:/etc/letsencrypt
   #     - www-html:/var/www/certbot
   #   command: certonly --webroot --webroot-path=/var/www/certbot --email komalex203@gmail.com --agree-tos --no-eff-email -d alexkomzzz.ml
+  tlg-bot:
+    image: telegram-bot/collect:latest
+    container_name: tlg-bot
+    hostname: tlg-bot
+    depends_on:
+      - go-api
+    ports:
+      - 9090:9090
+    restart: always
+    env_file:
+      - .env
+    # environment:
+    #   - token="5807856069:AAH1IR4LxyR4v1RJ_srhRq9H_UggsnhEn_4"
+    # volumes:
+    #   - file_tom:/web/files
+    networks:
+      net-server:
+        ipv4_address: 172.16.2.5
   
 networks:
   net-server:
