@@ -5,6 +5,8 @@ YANDEX_OAUTH_CLIENT_ID: "fe3918e6e2ee4e68b1391c55e117ebc5"
 domain: "localhost"
 url: "http://localhost:8080"
 
+bot_url: "https://t.me/Collectivity_Bot"
+
 db:
   username: "postgres"
   password: "qwerty"

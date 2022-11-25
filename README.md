@@ -51,6 +51,7 @@
 развернуть контейнер с приложением
 
     $ docker compose up -d --build
+    $ docker compose --env-file .env up --build
 
 зайти в оболочку bash контейнера postgres
 
