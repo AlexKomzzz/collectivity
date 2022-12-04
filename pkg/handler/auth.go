@@ -171,95 +171,21 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 func (h *Handler) signUp(c *gin.Context) { // Обработчик для регистрации
 
 	dataUser := &app.User{}
-	var passRepeat string
 
-	// ContentType = text/plain
-	// выделим тело запроса
-	/* структура тела запроса {
-		first-name=<first-name>
-		last-name=<last-name>
-		middle-name=<middle-name> OR nil !!!!
-		email=<your_email>
-		psw=<password>
-		btn_login=
-	}*/
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
+	dataUser.FirstName = c.PostForm("first-name")
+	dataUser.LastName = c.PostForm("last-name")
+	dataUser.MiddleName = c.PostForm("middle-name")
+	dataUser.Email = c.PostForm("email")
+	dataUser.Password = c.PostForm("psw")
+	passRepeat := c.PostForm("psw-repeat")
+
+	if dataUser.FirstName == "" || dataUser.LastName == "" || dataUser.Password == "" || passRepeat == "" || dataUser.Email == "" {
+		logrus.Println("получены не все данные при создании нового пользователя")
 		c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
 			"err":    true,
 			"msgErr": "Ошибка запроса. Введите, пожалуйста, все данные снова.",
 		})
 		return
-	}
-
-	// выделим данные из body и запишем в структуру User
-	// разделим поля данных в запросе
-	res := bytes.Split(body, []byte{13, 10})
-	for _, params := range res {
-		// делим строки по знаку равенства
-		paramsSl := strings.Split(string(params), "=")
-
-		if paramsSl[0] == "first-name" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передано имя при создании нового пользователя")
-				c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-					"err":    true,
-					"msgErr": "Ошибка запроса. Введите, пожалуйста, все данные снова.",
-				})
-				return
-			}
-			dataUser.FirstName = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "last-name" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передана фамилия при создании нового пользователя")
-				c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-					"err":    true,
-					"msgErr": "Ошибка запроса. Введите, пожалуйста, все данные снова.",
-				})
-				return
-			}
-			dataUser.LastName = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "middle-name" {
-			if len(paramsSl) > 1 {
-				dataUser.MiddleName = strings.TrimSpace(paramsSl[1])
-			}
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "email" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан email при создании нового пользователя")
-				c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-					"err":    true,
-					"msgErr": "Ошибка запроса. Введите, пожалуйста, все данные снова.",
-				})
-				return
-			}
-			dataUser.Email = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "psw" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан пароль при создании нового пользователя")
-				c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-					"err":    true,
-					"msgErr": "Ошибка запроса. Введите, пожалуйста, все данные снова.",
-				})
-				return
-			}
-			dataUser.Password = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "psw-repeat" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан повторный пароль при создании нового пользователя")
-				c.HTML(http.StatusBadRequest, "forma_auth.html", gin.H{
-					"err":    true,
-					"msgErr": "Ошибка запроса. Введите, пожалуйста, все данные снова.",
-				})
-				return
-			}
-			passRepeat = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		}
 	}
 
 	// составление ФИО
