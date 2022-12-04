@@ -1,10 +1,8 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
-	"io"
 
 	"log"
 	"net/http"
@@ -49,38 +47,17 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		return
 	}
 
-	// ContentType = text/plain
-	// выделим тело запроса
-	/* структура тела запроса {
-		email=<your_email>
-		password=<your_pass>
-		btn_login=
-	}*/
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		logrus.Println("ошибка при выделении тела запроса в signInBot: ", err)
+	dataUser.Email = c.PostForm("email")
+	dataUser.Password = c.PostForm("password")
+
+	if dataUser.Email == "" || dataUser.Password == "" {
+		logrus.Println("не получены email или пароль при аутентификации для тлг бота")
 		c.HTML(http.StatusBadRequest, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Ошибка в запросе, пожалуйста, повторите.",
 			"URL":    redirectURL,
 		})
 		return
-	}
-
-	// выделим email и password из body
-	// разделим поля данных в запросе
-	res := bytes.Split(body, []byte{13, 10})
-	for _, params := range res {
-		// делим строки по знаку равенства
-		paramsSl := strings.Split(string(params), "=")
-
-		if paramsSl[0] == "email" {
-			dataUser.Email = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "password" {
-			dataUser.Password = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		}
 	}
 
 	token, err := h.service.GenerateJWT(dataUser.Email, dataUser.Password)
@@ -155,23 +132,11 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 
 	bodyReq := strings.NewReader(string(dataReq))
 
-	// отправка ПОСТ запроса на ссылку редиректа с debt в теле
-	req, err := http.NewRequest("POST", redirectURL, bodyReq)
+	// отправление POST запроса
+	response, err := http.Post(redirectURL, "application/json", bodyReq)
+	// response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logrus.Println("Handler/signInBot()/NewRequest()/ ошибка при создании запроса на редирект ссылку: ", err)
-		c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
-			"err":    true,
-			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
-			"URL":    redirectURL,
-		})
-		return
-	}
-	// logrus.Printf("request Head = %s\n", req.Header.Get("Authorization"))
-	// logrus.Printf("request = %v\n", req)
-	// отправление GET запроса
-	response, err := http.DefaultClient.Do(req)
-	if err != nil {
-		logrus.Println("Handler/signInBot()/Do()/ ошибка при отправке запроса на редирект ссылку: ", err)
+		logrus.Println("Handler/signInBot()/Post()/ ошибка при отправке запроса на редирект ссылку: ", err)
 		c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",

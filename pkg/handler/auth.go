@@ -1,15 +1,12 @@
 package handler
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
-	"io"
 
 	"net/http"
 	"net/url"
-	"strings"
 
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/gin-gonic/gin"
@@ -37,7 +34,6 @@ func (h *Handler) createAdm(c *gin.Context) {
 // создание пользователя при получении данных с помощью OAuth (Google или Яндекс)
 func (h *Handler) createUserOAuth(c *gin.Context) {
 
-	var middleName string
 	dataUser := &app.User{}
 
 	// определение JWT_API из URL
@@ -50,39 +46,14 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 		return
 	}
 
-	// получени отчества пользователя из тела запроса
-	/* структура тела запроса {
-		middle-name=<middle-name>
-	}*/
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		logrus.Println("Handler/createUserOAuth()/ReadAll()/ ошибка при чтении тела запроса: ", err)
+	middleName := c.PostForm("middle-name")
+	if middleName == "" {
+		logrus.Println("не передано отчество в теле запроса при регистрации через OAuth2")
 		c.HTML(http.StatusBadRequest, "middle_names.html", gin.H{
 			"err":    true,
 			"msgErr": "Ошибка запроса. Введите, пожалуйста, данные снова",
 		})
 		return
-	}
-
-	// выделим данные из body и запишем в структуру User
-	// разделим поля данных в запросе
-	res := bytes.Split(body, []byte{13, 10})
-	for _, params := range res {
-		// делим строки по знаку равенства
-		paramsSl := strings.Split(string(params), "=")
-
-		if paramsSl[0] == "middle-name" {
-			if paramsSl[1] == "" {
-				logrus.Println("Handler/createUserOAuth()/ ошибка не передано отчество в теле запроса при регистрации через OAuth2")
-				c.HTML(http.StatusBadRequest, "middle_names.html", gin.H{
-					"err":    true,
-					"msgErr": "Ошибка запроса. Введите, пожалуйста, данные снова",
-				})
-				return
-			}
-			middleName = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		}
 	}
 
 	// восстановить idUserAPI из JWT
@@ -506,41 +477,13 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 // определение пользователя по email при восстановлении пароля, отправка письма на почту с токеном
 func (h *Handler) definitionUser(c *gin.Context) {
 
-	var emailUser string
-
-	// ContentType = text/plain
-	// выделим тело запроса
-	/* структура тела запроса {
-		email=<your_email>
-		btn_login=
-	}*/
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		logrus.Println("Handler/definitionUser()/ReadAll(): ", err)
+	emailUser := c.PostForm("email")
+	if emailUser == "" {
+		logrus.Println("не передан email для восстановления пароля")
 		c.HTML(http.StatusBadRequest, "new_pass_email.html", gin.H{
-			"error": "Ошибка запроса. Повторите процедуру",
+			"error": "Ошибка запроса. Повторите процедуру.",
 		})
 		return
-	}
-
-	// выделим email из body
-	// разделим поля данных в запросе
-	res := bytes.Split(body, []byte{13, 10})
-	for _, params := range res {
-		// делим строки по знаку равенства
-		paramsSl := strings.Split(string(params), "=")
-
-		if paramsSl[0] == "email" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан email для восстановления пароля")
-				c.HTML(http.StatusBadRequest, "new_pass_email.html", gin.H{
-					"error": "Ошибка запроса. Повторите процедуру.",
-				})
-				return
-			}
-			emailUser = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		}
 	}
 
 	// идентифицируем пользователя по email, получени id пользователя по email
@@ -645,8 +588,6 @@ func (h *Handler) definitionUserJWT(c *gin.Context) {
 // восстановление пароля
 func (h *Handler) recoveryPass(c *gin.Context) {
 
-	var psw, refreshPsw string
-
 	// определение JWT из URL
 	token := c.Query("token")
 	if token == "" {
@@ -667,64 +608,17 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 		return
 	}
 
-	// ContentType = text/plain
-	// выделим тело запроса
-	/* структура тела запроса {
-		psw=<new_password>
-		refresh_psw=<refresh_psw>
-		id_user=<your_id>
-	}*/
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		logrus.Println(err)
-		newErrorResponse(c, http.StatusBadRequest, err.Error())
+	psw := c.PostForm("psw")
+	refreshPsw := c.PostForm("refresh_psw")
+	if psw == "" || refreshPsw == "" {
+		logrus.Println("не передан повторный или основной пароль для изменения")
+		c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
+			"id":     true,
+			"token":  token,
+			"err":    true,
+			"msgErr": "Повторите введение паролей",
+		})
 		return
-	}
-
-	// выделим новый пароль и повторный пароль из body
-	// разделим поля данных в запросе
-	res := bytes.Split(body, []byte{13, 10})
-	for _, params := range res {
-		// делим строки по знаку равенства
-		paramsSl := strings.Split(string(params), "=")
-
-		// if paramsSl[0] == "token" {
-		// 	if paramsSl[1] == "" {
-		// 		logrus.Println("не передан token при восстановлении пароля")
-		// 		c.HTML(http.StatusBadRequest, "login.html", gin.H{
-		// 			"error": "Ошибка запроса. Повторите процедуру.",
-		// 		})
-		// 		return
-		// 	}
-		// 	token = paramsSl[1]
-		// 	// log.Println(paramsSl[1])
-		if paramsSl[0] == "refresh_psw" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан повторный пароль для изменения")
-				c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
-					"id":     true,
-					"token":  token,
-					"err":    true,
-					"msgErr": "Повторите новый пароль.",
-				})
-				return
-			}
-			refreshPsw = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		} else if paramsSl[0] == "psw" {
-			if paramsSl[1] == "" {
-				logrus.Println("не передан новый пароль для изменения")
-				c.HTML(http.StatusBadRequest, "new_pass.html", gin.H{
-					"id":     true,
-					"token":  token,
-					"err":    true,
-					"msgErr": "Вы не указали новый пароль.",
-				})
-				return
-			}
-			psw = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		}
 	}
 
 	// определяем пользователя по JWT
