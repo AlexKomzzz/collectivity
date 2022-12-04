@@ -8,7 +8,8 @@ package handler
 import (
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"net/http"
 	"net/url"
 	"os"
@@ -226,7 +227,7 @@ func getUserDataFromYandex(c *gin.Context) ([]byte, error) {
 	}
 
 	// чтение тела ответа на запрос GET
-	contents, err := ioutil.ReadAll(response.Body)
+	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("failed read response by API Яндекс ID: %s", err.Error())
 	}
@@ -284,7 +285,7 @@ func getAccessTokenFromYandex(c *gin.Context) (string, error) {
 	}
 
 	// чтение тела ответа на запрос Post
-	contents, err := ioutil.ReadAll(response.Body)
+	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return "", fmt.Errorf("failed read response by Яндекс.OAuth: %s", err.Error())
 	}

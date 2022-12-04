@@ -7,7 +7,8 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
+	"io"
+
 	"net/http"
 	"os"
 
@@ -239,7 +240,7 @@ func getUserDataFromGoogle(c *gin.Context) ([]byte, error) {
 	}
 
 	// чтение тела ответа на запрос GET
-	contents, err := ioutil.ReadAll(response.Body)
+	contents, err := io.ReadAll(response.Body)
 	if err != nil {
 		return nil, fmt.Errorf("getUserDataFromGoogle()/ReadAll()/ ошибка при прочтении тела ответа: %s", err.Error())
 	}
