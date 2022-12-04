@@ -37,7 +37,6 @@ func (h *Handler) createAdm(c *gin.Context) {
 // создание пользователя при получении данных с помощью OAuth (Google или Яндекс)
 func (h *Handler) createUserOAuth(c *gin.Context) {
 
-	var middleName string
 	dataUser := &app.User{}
 
 	// определение JWT_API из URL
@@ -50,39 +49,14 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 		return
 	}
 
-	// получени отчества пользователя из тела запроса
-	/* структура тела запроса {
-		middle-name=<middle-name>
-	}*/
-	body, err := io.ReadAll(c.Request.Body)
-	if err != nil {
-		logrus.Println("Handler/createUserOAuth()/ReadAll()/ ошибка при чтении тела запроса: ", err)
+	middleName := c.PostForm("middle-name")
+	if middleName == "" {
+		logrus.Println("не передано отчество в теле запроса при регистрации через OAuth2")
 		c.HTML(http.StatusBadRequest, "middle_names.html", gin.H{
 			"err":    true,
 			"msgErr": "Ошибка запроса. Введите, пожалуйста, данные снова",
 		})
 		return
-	}
-
-	// выделим данные из body и запишем в структуру User
-	// разделим поля данных в запросе
-	res := bytes.Split(body, []byte{13, 10})
-	for _, params := range res {
-		// делим строки по знаку равенства
-		paramsSl := strings.Split(string(params), "=")
-
-		if paramsSl[0] == "middle-name" {
-			if paramsSl[1] == "" {
-				logrus.Println("Handler/createUserOAuth()/ ошибка не передано отчество в теле запроса при регистрации через OAuth2")
-				c.HTML(http.StatusBadRequest, "middle_names.html", gin.H{
-					"err":    true,
-					"msgErr": "Ошибка запроса. Введите, пожалуйста, данные снова",
-				})
-				return
-			}
-			middleName = strings.TrimSpace(paramsSl[1])
-			// log.Println(paramsSl[1])
-		}
 	}
 
 	// восстановить idUserAPI из JWT
