@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"errors"
-	"io/ioutil"
+	"io"
+
 	"log"
 	"net/http"
 	"strings"
@@ -55,7 +56,7 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		password=<your_pass>
 		btn_login=
 	}*/
-	body, err := ioutil.ReadAll(c.Request.Body)
+	body, err := io.ReadAll(c.Request.Body)
 	if err != nil {
 		logrus.Println("ошибка при выделении тела запроса в signInBot: ", err)
 		c.HTML(http.StatusBadRequest, "login_bot.html", gin.H{
