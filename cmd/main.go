@@ -14,6 +14,11 @@ import (
 	"github.com/spf13/viper"
 )
 
+const (
+	certFile = "./certs/example.com+5.pem"
+	keyFile  = "./certs/example.com+5-key.pem"
+)
+
 func initConfig() error { //Инициализация конфигураций
 	viper.AddConfigPath("configs")
 	viper.SetConfigName("config")
@@ -54,6 +59,11 @@ func main() {
 		Password: viper.GetString("redis.password"),
 		DB:       viper.GetInt("redis.db"),
 	})
+	if err != nil {
+		logrus.Fatalf("failed to initialize redis: %s", err.Error())
+		return
+	}
+
 	defer redisClient.Close()
 
 	repos := repository.NewRepository(db, redisClient)
@@ -68,7 +78,7 @@ func main() {
 	}
 
 	go func() {
-		if err := server.Run(viper.GetString("port")); err != nil {
+		if err := server.RunTLS(viper.GetString("port"), certFile, keyFile); err != nil {
 			logrus.Fatalf("Error run web serv")
 			return
 		}

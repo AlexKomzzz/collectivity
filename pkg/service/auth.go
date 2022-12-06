@@ -291,7 +291,7 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 	passwordAPI := os.Getenv("SMTPpwd")
 	host := viper.GetString("email.host")
 	port := viper.GetString("email.port")
-	address := host + ":" + port
+	addrSrv := host + ":" + port
 
 	// Настройка аутентификации отправителя
 	// auth := sasl.NewPlainClient("", emailAPI, passwordAPI)
@@ -303,7 +303,7 @@ func (service *AuthService) SendMessageByMail(emailUser, url, msg string) error 
 	// список рассылки
 	to := []string{emailUser}
 	logrus.Println("send mes START")
-	err := smtp.SendMail(address, auth, emailAPI, to, []byte(msg))
+	err := smtp.SendMail(addrSrv, auth, emailAPI, to, []byte(msg))
 	logrus.Println("send mes OK")
 
 	if err != nil {
