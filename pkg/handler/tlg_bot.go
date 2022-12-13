@@ -22,7 +22,7 @@ type dataClient struct {
 // выдача формы для авторизации по почте и паролю с передачей ссылки редиректа
 func (h *Handler) loginBot(c *gin.Context) {
 
-	// парсинг URL, вытаскиевае ссылку редиректа
+	// парсинг URL, вытаскиваем ссылку редиректа
 	redirectURL := c.Query("redirect_url")
 	if redirectURL == "" {
 		errorServerResponse(c, errors.New("invalid request"))

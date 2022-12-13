@@ -9,12 +9,13 @@ import (
 	"net/url"
 
 	app "github.com/AlexKomzzz/collectivity"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
 
-const startList = "http://localhost:8080/startList?token="
+const startListURI = "https://localhost:8080/startList"
 
 // создание админа
 func (h *Handler) createAdm(c *gin.Context) {
@@ -135,7 +136,16 @@ func (h *Handler) createUserOAuth(c *gin.Context) {
 	// 	"token": token,
 	// })
 
-	c.Redirect(http.StatusTemporaryRedirect, startList+token)
+	// создание сессии
+	session := sessions.Default(c)
+
+	// запись в куки JWT
+	session.Set("token", token)
+	session.Save()
+
+	logrus.Println("Запись куки-файла при OAuth2")
+
+	c.Redirect(http.StatusTemporaryRedirect, startListURI)
 }
 
 // получение данных при создании нового пользователя, запись в БД регистрации, отправка ссылки с токеном и email на почту для подтверждения эл.почты
@@ -143,6 +153,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 
 	dataUser := &app.User{}
 
+	//  извлечение данных из пост запроса
 	dataUser.FirstName = c.PostForm("first-name")
 	dataUser.LastName = c.PostForm("last-name")
 	dataUser.MiddleName = c.PostForm("middle-name")
@@ -276,7 +287,7 @@ func (h *Handler) signUp(c *gin.Context) { // Обработчик для рег
 
 // поинт при переходе по ссылке на подтверждение эл.почты для создания нового пользователя
 // выделение токена и email из URL, выделение idUser из токена, получение данных пользователя из БД authdata,
-// сравнение email полученного и сохраненного в БД, создание нового пользователя в БД users, генерация и выдача JWT
+// сравнение email полученного и сохраненного в БД, создание нового пользователя в БД users, редирект на стр входа
 func (h *Handler) signAdd(c *gin.Context) { // Обработчик для регистрации
 
 	dataUser := &app.User{}
@@ -376,13 +387,12 @@ func (h *Handler) signAdd(c *gin.Context) { // Обработчик для ре�
 	// })
 
 	c.HTML(http.StatusOK, "login.html", gin.H{
-		"msg": "Пользователь успешно создан. Войдите с помощью электронной почты и пароля",
+		"msg": "Учетная запись успешно создана. Используйте адрес электронной почты и пароль для входа",
 	})
-
 }
 
-// аутентификация пользователя, выдача JWT
-func (h *Handler) signIn(c *gin.Context) { // Обработчик для аутентификации и получения токена
+// аутентификация пользователя, генерация JWT, создание сессии
+func (h *Handler) signIn(c *gin.Context) {
 
 	var dataUser app.User
 
@@ -466,12 +476,29 @@ func (h *Handler) signIn(c *gin.Context) { // Обработчик для аут
 		return
 	}
 
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"token": token,
-	// })
+	// создание сессии
+	session := sessions.Default(c)
+
+	// запись в куки JWT
+	session.Set("token", token)
+	session.Save()
+
+	logrus.Println("Запись куки-файла при email и пароле")
 
 	// редирект на стартовую страницу
-	c.Redirect(http.StatusTemporaryRedirect, startList+token)
+	c.Redirect(http.StatusTemporaryRedirect, startListURI)
+}
+
+// удаление сессии пользователя
+func (h *Handler) signOut(c *gin.Context) {
+
+	session := sessions.Default(c)
+	session.Clear()
+	session.Save()
+
+	logrus.Println("Выход из учетной записи")
+
+	c.HTML(http.StatusBadRequest, "login.html", gin.H{})
 }
 
 // определение пользователя по email при восстановлении пароля, отправка письма на почту с токеном
@@ -671,7 +698,7 @@ func (h *Handler) recoveryPass(c *gin.Context) {
 	// перенаправить на страницу авторизации
 	// либо стразу выдать JWT???
 	c.HTML(http.StatusOK, "login.html", gin.H{
-		"error": "Пароль успешно обновлен",
+		"error": "Пароль успешно обновлен. Можете использовать его для входа в учетную запись",
 	})
 	// c.JSON(http.StatusOK, gin.H{
 	// 	"token": tokenJWT,

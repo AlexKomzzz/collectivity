@@ -5,6 +5,7 @@ import (
 
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
+	"github.com/gin-contrib/sessions/cookie"
 )
 
 type Authorization interface {
@@ -49,6 +50,7 @@ type Authorization interface {
 	GenerateJWTtoEmail(idUser int) (string, error)
 	// проверка заголовка авторизации на валидность
 	ValidToken(headerAuth string) (int, error)
+	NewSession() cookie.Store
 	// парс токена (получаем из токена id)
 	ParseToken(accesstoken string) (int, error)
 	// парс токена при восстановлении пароля или подтверждении почты

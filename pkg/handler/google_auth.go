@@ -27,7 +27,7 @@ const oauthGoogleUrlAPI = "https://www.googleapis.com/oauth2/v2/userinfo?access_
 
 // конфигурация клиента
 var googleOauthConfig = &oauth2.Config{
-	RedirectURL: "http://localhost:8080/auth/google/callback",
+	RedirectURL: "https://localhost:8080/auth/google/callback",
 	// ClientID:     viper.GetString("client_ID"), так не записывает!!!!
 	//ClientSecret: os.Getenv("GOOGLE_OAUTH_CLIENT_SECRET"),
 	Scopes:   []string{"https://www.googleapis.com/auth/userinfo.email", "https://www.googleapis.com/auth/userinfo.profile"},
