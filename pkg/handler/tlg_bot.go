@@ -9,9 +9,15 @@ import (
 	"strings"
 
 	app "github.com/AlexKomzzz/collectivity"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
+)
+
+const (
+	keyTokenCtx    = "token"
+	keyRedirectURL = "redirectURL"
 )
 
 type dataClient struct {
@@ -30,52 +36,45 @@ func (h *Handler) loginBot(c *gin.Context) {
 		return
 	}
 
-	// создаем куки
-	c.SetCookie("redirectTLG", redirectURL, 60*60*24, "/", viper.GetString("host"), true, true)
-	// создание сессии
-	// session := sessions.Default(c)
+	// проверка JWT в куках
+	session := sessions.Default(c)
+	sessionToken := session.Get("token")
+	if sessionToken == nil {
+		logrus.Println("Вход без идентификации")
 
-	// // запись в куки JWT
-	// session.Set("redirectTlg", redirectURL)
-	// session.Save()
+		// создаем куки
+		c.SetCookie("redirectTLG", redirectURL, 60*60*24, "/", viper.GetString("host"), true, true)
 
-	logrus.Println("Запись куки-файла регистации для тлг")
-
-	// выдача формы с передачей ссылки
-	c.HTML(http.StatusOK, "login_bot.html", gin.H{
-		// "URL": redirectURL,
-	})
-}
-
-// аутентификация пользователя, выдача JWT
-func (h *Handler) signInBot(c *gin.Context) { // Обработчик для аутентификации и получения токена
-
-	var dataUser app.User
-
-	// парсинг URL, вытаскиваем ссылку редиректа
-	// redirectURL := c.Query("redirect_url")
-	// if redirectURL == "" {
-	// 	errorServerResponse(c, errors.New("invalid request"))
-	// 	return
-	// }
-
-	// получение ссылки редиректа из куки
-	redirectURL, err := c.Cookie("redirectTLG")
-	if err != nil {
-		logrus.Println("отсутствует ссылка редиректа на тлг API в куках")
-		errorServerResponse(c, errors.New("invalid request"))
+		logrus.Println("Запись куки-файла регистации для тлг")
+		// при отсутствии токена в куках выдача формы на аутентификацию
+		c.HTML(http.StatusBadRequest, "login_bot.html", gin.H{})
 		return
 	}
 
-	// session := sessions.Default(c)
-	// redirectURL := session.Get("token")
-	// if redirectURL == nil {
-	// 	logrus.Println("отсутствует ссылка редиректа на тлг API в куках")
-	// 	errorServerResponse(c, errors.New("invalid request"))
-	// 	return
-	// }
+	c.Set(keyTokenCtx, sessionToken.(string))
+	c.Set(keyRedirectURL, redirectURL)
 
-	// получение данных от польхователя из пост запроса
+	h.getDebtBot(c)
+}
+
+// получение данных аутентификации пользователя, генерация JWT
+func (h *Handler) signInBot(c *gin.Context) {
+
+	var dataUser app.User
+
+	// получение ссылки редиректа из куки
+
+	redirectURL, err := c.Cookie("redirectTLG")
+	if err != nil {
+		logrus.Println("Handler/signInBot()/GetDebtUser(): ", err)
+		c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
+			"err":    true,
+			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
+		})
+		return
+	}
+
+	// получение данных от пользователя из пост запроса
 	dataUser.Email = c.PostForm("email")
 	dataUser.Password = c.PostForm("password")
 
@@ -84,7 +83,6 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		c.HTML(http.StatusBadRequest, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Ошибка в запросе, пожалуйста, повторите.",
-			"URL":    redirectURL,
 		})
 		return
 	}
@@ -97,21 +95,18 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 			c.HTML(http.StatusBadRequest, "login_bot.html", gin.H{
 				"err":    true,
 				"errMsg": "Пользователя с такой эл. почтой не существует. Проверьте правильность введенных данных или зарегистрируйтесь.",
-				"URL":    redirectURL,
 			})
 		} else if err.Error() == "пароль" {
 			logrus.Println("Handler/signInBot()/GenerateJWT(): ", err)
 			c.HTML(http.StatusBadRequest, "login_bot.html", gin.H{
 				"err":    true,
 				"errMsg": "Неверный пароль. Попробуйте снова.",
-				"URL":    redirectURL,
 			})
 		} else {
 			logrus.Println("Handler/signInBot()/GenerateJWT(): ", err)
 			c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
 				"err":    true,
 				"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
-				"URL":    redirectURL,
 			})
 			return
 		}
@@ -119,34 +114,52 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		return
 	}
 
-	// ПЕРЕДЕЛАТЬ
+	c.Set(keyTokenCtx, token)
+	c.Set(keyRedirectURL, redirectURL)
+
+	h.getDebtBot(c)
+}
+
+// передача данных о задолженности
+func (h *Handler) getDebtBot(c *gin.Context) {
+
+	// получение токена из контекста
+	token, err := getTokenCtx(c)
+	if err != nil {
+		logrus.Println("Handler/getDebtBot()/getTokenCtx(): ", err)
+		errorServerResponse(c, err)
+		return
+	}
+
+	// получение редирект ссылки на API tlg bot из контекста
+	redirectURL, err := getRedirectURLCtx(c)
+	if err != nil {
+		logrus.Println("Handler/getDebtBot()/getRedirectURLCtx(): ", err)
+		errorServerResponse(c, err)
+		return
+	}
+
 	// определение idUser по JWT
 	idUser, err := h.service.ParseToken(token)
 	if err != nil {
-		logrus.Println("Handler/signInBot()/ParseToken(): ", err)
+		logrus.Println("Handler/getDebtBot()/ParseToken(): ", err)
 		c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
-			"URL":    redirectURL,
 		})
+		return
 	}
 
-	// полуяение данных о задолженности по idUser
+	// получение данных о задолженности по idUser
 	debt, err := h.service.GetDebtUser(idUser)
 	if err != nil {
-		logrus.Println("Handler/signInBot()/GetDebtUser(): ", err)
+		logrus.Println("Handler/getDebtBot()/GetDebtUser(): ", err)
 		c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
-			"URL":    redirectURL,
 		})
+		return
 	}
-	// c.JSON(http.StatusOK, gin.H{
-	// 	"token": token,
-	// })
-
-	// редирект на стартовую страницу
-	// c.Redirect(http.StatusTemporaryRedirect, startList+token)
 
 	// структура для отправки на API tlg_bot
 	dataClient := &dataClient{
@@ -156,25 +169,23 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 
 	dataReq, err := json.Marshal(dataClient)
 	if err != nil {
-		logrus.Println("Handler/signInBot()/Marshal()/ ошибка при маршалинге структуру данных о клиенте: ", err)
+		logrus.Println("Handler/getDebtBot()/Marshal()/ ошибка при маршалинге структуру данных о клиенте: ", err)
 		c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
-			"URL":    redirectURL,
 		})
+		return
 	}
 
 	bodyReq := strings.NewReader(string(dataReq))
 
 	// отправление POST запроса
 	response, err := http.Post(redirectURL, "application/json", bodyReq)
-	// response, err := http.DefaultClient.Do(req)
 	if err != nil {
-		logrus.Println("Handler/signInBot()/Post()/ ошибка при отправке запроса на редирект ссылку: ", err)
+		logrus.Println("Handler/getDebtBot()/Post()/ ошибка при отправке запроса на редирект ссылку: ", err)
 		c.HTML(http.StatusInternalServerError, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
-			"URL":    redirectURL,
 		})
 		return
 	}
@@ -187,15 +198,46 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		c.HTML(http.StatusBadRequest, "login_bot.html", gin.H{
 			"err":    true,
 			"errMsg": "Непредвиденная ошибка, пожалуйста, повторите.",
-			"URL":    redirectURL,
 		})
 		return
 	}
+
+	log.Println("успешная регистрация тлг бота для пользователя: ", idUser)
 
 	// перенаправление на тлг бота
 	botURL := viper.GetString("bot_url")
 	c.Header("Location", botURL)
 	c.Writer.WriteHeader(http.StatusMovedPermanently)
-	// c.AbortWithStatus(http.StatusMovedPermanently)
-	log.Println("успешная регистрация тлг бота для пользователя: ", idUser)
+}
+
+// вытащить токен из контекста
+func getTokenCtx(c *gin.Context) (string, error) {
+
+	tokenCtx, ok := c.Get(keyTokenCtx)
+	if !ok {
+		return "", errors.New("token not found by contect")
+	}
+
+	token, ok := tokenCtx.(string)
+	if !ok {
+		return "", errors.New("token is of invalid type by contect")
+	}
+
+	return token, nil
+}
+
+// вытащить токен из контекста
+func getRedirectURLCtx(c *gin.Context) (string, error) {
+
+	redirectURLCtx, ok := c.Get(keyRedirectURL)
+	if !ok {
+		return "", errors.New("redirectURL not found by contect")
+	}
+
+	redirectURL, ok := redirectURLCtx.(string)
+	if !ok {
+		return "", errors.New("redirectURL is of invalid type by contect")
+	}
+
+	return redirectURL, nil
 }
