@@ -117,6 +117,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 		// авторизация и регистрация для тлг бота
 		tlg_bot := auth.Group("/tlg")
+		// tlg_bot.Use(sessions.Sessions("tlg_bot", h.service.NewSession()))
 		{
 			// отправка формы авторизации
 			tlg_bot.GET("/login", h.loginBot)
