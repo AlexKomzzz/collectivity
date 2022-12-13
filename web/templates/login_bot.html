@@ -48,7 +48,6 @@
             <center>
                 {{ if .err }}
                 <div class="error_title">{{ .errMsg }}</div>
-                {{ else }}
                 {{ end }}
                 <div class="section"></div>
                 <div class="container">
@@ -71,9 +70,8 @@
                             <div class='row'>
                                 <div class='input-field col s12'>
                                     <input class='validate' type='password' name='password' id='password'/>
-                                    <label for='password'>Введи ваш пароль</label>
+                                    <label for='password'>Введите ваш пароль</label>
                                 </div>
-                              
                             </div>
 
                             <br/>
@@ -84,9 +82,31 @@
                             </div>
                         </form>
 
-                        
+                        <div class="row">
+                            <div class="btn white darken-6 col s12">
+                                <a href="/auth/google/login" style="text-transform:none">
+                                    <div class="left">
+                                        <img width="30px" alt="Google &quot;G&quot; Logo"
+                                            src="https://upload.wikimedia.org/wikipedia/commons/thumb/5/53/Google_%22G%22_Logo.svg/512px-Google_%22G%22_Logo.svg.png"/>
+                                    </div>
+                                    Войти с помощью Google
+                                </a>
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="btn white darken-6 col s12">
+                                <a href="/auth/yandex/login" style="text-transform:none">
+                                    <div class="left">
+                                        <img width="30px" alt="Yandex &quot;Ya&quot; Logo"
+                                            src="https://encrypted-tbn1.gstatic.com/images?q=tbn:ANd9GcTo7_7rJ8IhbzDJ7El-4t-z260lvmvl72U_1OfxHCCRuaTZwofe"/>
+                                    </div>
+                                    Войти с помощью Яндекс
+                                </a>
+                            </div>
+                        </div>
                     </div>
                 </div>
+               
             </center>
 
             <div class="section"></div>

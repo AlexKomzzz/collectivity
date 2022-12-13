@@ -40,7 +40,7 @@ func (h *Handler) startList(c *gin.Context) {
 	sessionToken := session.Get("token")
 	if sessionToken == nil {
 		logrus.Println("Вход без идентификации")
-		c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+		c.HTML(http.StatusOK, "login.html", gin.H{})
 		return
 	}
 

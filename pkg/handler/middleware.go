@@ -33,7 +33,7 @@ const (
 
 	// запись idUser в контекст
 	c.Set(userCtx, userId)
-}*/
+}
 
 /*
 func getUserId(c *gin.Context) (int, error) {
