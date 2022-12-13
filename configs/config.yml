@@ -2,7 +2,7 @@ port: ":8080"
 host: "localhost"
 GOOGLE_OAUTH_CLIENT_ID: "995350173631-6ffgi1nkh711d7g23dq7no9vgvl536r5.apps.googleusercontent.com"
 YANDEX_OAUTH_CLIENT_ID: "fe3918e6e2ee4e68b1391c55e117ebc5"
-domain: "localhost"
+# domain: "localhost" # используется для создания куки в OAuth2
 url: "https://localhost:8080" # для письма на почту
 
 bot_url: "https://t.me/Collectivity_Bot"

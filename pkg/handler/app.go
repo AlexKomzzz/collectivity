@@ -3,6 +3,7 @@ package handler
 import (
 	"net/http"
 
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 	"github.com/sirupsen/logrus"
 )
@@ -27,23 +28,32 @@ func (h *Handler) startList(c *gin.Context) {
 
 	// получение токена из URL
 	// определение JWT и email из URL
-	token := c.Query("token")
-	if token == "" {
+	// token := c.Query("token")
+	// if token == "" {
+	// 	logrus.Println("Вход без идентификации")
+	// 	c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+	// 	return
+	// }
+
+	// Получение тока из файла куки
+	session := sessions.Default(c)
+	sessionToken := session.Get("token")
+	if sessionToken == nil {
 		logrus.Println("Вход без идентификации")
 		c.HTML(http.StatusBadRequest, "login.html", gin.H{})
 		return
 	}
 
 	// парсинг токена
-	idUser, err := h.service.ParseToken(token)
+	idUser, err := h.service.ParseToken(sessionToken.(string))
 	if err != nil {
 		if idUser == -1 {
 			logrus.Println("Вход c протухшим JWT")
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{
-				"error": "Истекло выделенное время, введите электронный адрес и пароль для входа",
+				"error": "Истекло время сеанса",
 			})
 		} else {
-			logrus.Println("Вход без идентификации")
+			logrus.Println("Вход с неверным JWT")
 			c.HTML(http.StatusBadRequest, "login.html", gin.H{})
 		}
 		return

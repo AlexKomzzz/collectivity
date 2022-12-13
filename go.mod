@@ -4,6 +4,7 @@ go 1.18
 
 require (
 	github.com/dgrijalva/jwt-go v3.2.0+incompatible
+	github.com/gin-contrib/sessions v0.0.5
 	github.com/gin-gonic/gin v1.8.1
 	github.com/go-redis/redis v6.15.9+incompatible
 	github.com/jmoiron/sqlx v1.3.5
@@ -25,6 +26,9 @@ require (
 	github.com/goccy/go-json v0.9.7 // indirect
 	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/google/go-cmp v0.5.9 // indirect
+	github.com/gorilla/context v1.1.1 // indirect
+	github.com/gorilla/securecookie v1.1.1 // indirect
+	github.com/gorilla/sessions v1.2.1 // indirect
 	github.com/hashicorp/hcl v1.0.0 // indirect
 	github.com/json-iterator/go v1.1.12 // indirect
 	github.com/leodido/go-urn v1.2.1 // indirect

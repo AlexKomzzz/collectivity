@@ -35,7 +35,7 @@ type responceYandex struct {
 
 // конфигурация клиента
 var yandexOauthConfig = &oauth2.Config{
-	RedirectURL: "http://localhost:8080/auth/yandex/callback",
+	RedirectURL: "https://localhost:8080/auth/yandex/callback",
 	// ClientID:     viper.GetString("YANDEX_OAUTH_CLIENT_ID"), так не записывает!!!!
 	//ClientSecret: os.Getenv("YANDEX_OAUTH_CLIENT_SECRET"),
 	Scopes: []string{"login:default_phone", "login:info", "login:email"},

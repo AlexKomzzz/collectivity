@@ -23,6 +23,14 @@
 		<p> Ваш долг составляет: {{ .debt }}</p>
 		{{ else }}
 		{{ end }}
+
+		<div class="row">
+			<div class="btn white darken-6 col s12">
+				<a href="/auth/sign-out" style="text-transform:none">
+					Разлогиниться
+				</a>
+			</div>
+		</div>
 	</div>
 </body>
 </html>

@@ -13,6 +13,7 @@ import (
 	app "github.com/AlexKomzzz/collectivity"
 	"github.com/AlexKomzzz/collectivity/pkg/repository"
 	"github.com/dgrijalva/jwt-go"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/sirupsen/logrus"
 	"github.com/spf13/viper"
 )
@@ -24,11 +25,12 @@ const (
 	fNameAdmin = "collect"
 	lNameAdmin = "house"
 
-	SOLT            = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
-	tokenTTL        = 300 * time.Hour               // время жизни токена аутентификации
-	tokenTTLtoEmail = 15 * time.Minute              // время жизни токена при восстановлении пароля или подтверждении почты
-	JWT_SECRET      = "rkjk#4#%35FSFJlja#4353KSFjH" // секрет для JWT
-	JWTemail_SECRET = "r2sk#4#gdfoij743*#weg(FjH"   // секрет для токена при восстановлении пароля и подтверждения почты
+	SOLT              = "bt,&13#Rkm*54FS#$WR2@#nasf!ds5fre%"
+	tokenTTL          = 300 * time.Hour               // время жизни токена аутентификации
+	tokenTTLtoEmail   = 15 * time.Minute              // время жизни токена при восстановлении пароля или подтверждении почты
+	JWT_SECRET        = "rkjk#4#%35FSFJlja#4353KSFjH" // секрет для JWT
+	JWTemail_SECRET   = "r2sk#4#gdfoij743*#weg(FjH"   // секрет для токена при восстановлении пароля и подтверждения почты
+	secret_key_cookie = " vkldm&^vire#n23tAS54D$J23rnsd"
 )
 
 type AuthService struct {
@@ -236,6 +238,10 @@ func (service *AuthService) ValidToken(headerAuth string) (int, error) {
 	}
 
 	return service.ParseToken(headerParts[1])
+}
+
+func (service *AuthService) NewSession() cookie.Store {
+	return cookie.NewStore([]byte(secret_key_cookie))
 }
 
 // Парс токена (получаем из токена id)

@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/AlexKomzzz/collectivity/pkg/service"
+	"github.com/gin-contrib/sessions"
 	"github.com/gin-gonic/gin"
 )
 
@@ -23,6 +24,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 	mux := gin.New()
 
+	mux.Use(sessions.Sessions("mysession", h.service.NewSession()))
 	//mux.LoadHTMLFiles("./web/templates/error.html")
 	mux.LoadHTMLGlob("web/templates/*.html")
 	mux.NoRoute(Response404) // При неверном URL вызывает ф-ю Response404
@@ -82,6 +84,8 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		auth.GET("/sign-add", h.signAdd)
 		// аутентификация пользователя, выдача JWT
 		auth.POST("/sign-in", h.signIn)
+		// удаление сессии
+		auth.GET("/sign-out", h.signOut)
 
 		// восстановление пароля
 		pass := auth.Group("/pass")
@@ -113,6 +117,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 
 		// авторизация и регистрация для тлг бота
 		tlg_bot := auth.Group("/tlg")
+		// tlg_bot.Use(sessions.Sessions("tlg_bot", h.service.NewSession()))
 		{
 			// отправка формы авторизации
 			tlg_bot.GET("/login", h.loginBot)

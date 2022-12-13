@@ -22,16 +22,28 @@ type dataClient struct {
 // выдача формы для авторизации по почте и паролю с передачей ссылки редиректа
 func (h *Handler) loginBot(c *gin.Context) {
 
-	// парсинг URL, вытаскиевае ссылку редиректа
+	// парсинг URL, вытаскиваем ссылку редиректа
 	redirectURL := c.Query("redirect_url")
 	if redirectURL == "" {
+		logrus.Println("отсутствует ссылка редиректа в URL регистрации для тлг бота")
 		errorServerResponse(c, errors.New("invalid request"))
 		return
 	}
 
+	// создаем куки
+	c.SetCookie("redirectTLG", redirectURL, 60*60*24, "/", viper.GetString("host"), true, true)
+	// создание сессии
+	// session := sessions.Default(c)
+
+	// // запись в куки JWT
+	// session.Set("redirectTlg", redirectURL)
+	// session.Save()
+
+	logrus.Println("Запись куки-файла регистации для тлг")
+
 	// выдача формы с передачей ссылки
 	c.HTML(http.StatusOK, "login_bot.html", gin.H{
-		"URL": redirectURL,
+		// "URL": redirectURL,
 	})
 }
 
@@ -40,13 +52,30 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 
 	var dataUser app.User
 
-	// парсинг URL, вытаскиевае ссылку редиректа
-	redirectURL := c.Query("redirect_url")
-	if redirectURL == "" {
+	// парсинг URL, вытаскиваем ссылку редиректа
+	// redirectURL := c.Query("redirect_url")
+	// if redirectURL == "" {
+	// 	errorServerResponse(c, errors.New("invalid request"))
+	// 	return
+	// }
+
+	// получение ссылки редиректа из куки
+	redirectURL, err := c.Cookie("redirectTLG")
+	if err != nil {
+		logrus.Println("отсутствует ссылка редиректа на тлг API в куках")
 		errorServerResponse(c, errors.New("invalid request"))
 		return
 	}
 
+	// session := sessions.Default(c)
+	// redirectURL := session.Get("token")
+	// if redirectURL == nil {
+	// 	logrus.Println("отсутствует ссылка редиректа на тлг API в куках")
+	// 	errorServerResponse(c, errors.New("invalid request"))
+	// 	return
+	// }
+
+	// получение данных от польхователя из пост запроса
 	dataUser.Email = c.PostForm("email")
 	dataUser.Password = c.PostForm("password")
 
@@ -60,6 +89,7 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		return
 	}
 
+	// генерация JWT
 	token, err := h.service.GenerateJWT(dataUser.Email, dataUser.Password)
 	if err != nil {
 		if err.Error() == "нет пользователя" {
@@ -89,6 +119,8 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		return
 	}
 
+	// ПЕРЕДЕЛАТЬ
+	// определение idUser по JWT
 	idUser, err := h.service.ParseToken(token)
 	if err != nil {
 		logrus.Println("Handler/signInBot()/ParseToken(): ", err)
@@ -99,6 +131,7 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 		})
 	}
 
+	// полуяение данных о задолженности по idUser
 	debt, err := h.service.GetDebtUser(idUser)
 	if err != nil {
 		logrus.Println("Handler/signInBot()/GetDebtUser(): ", err)
@@ -115,6 +148,7 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 	// редирект на стартовую страницу
 	// c.Redirect(http.StatusTemporaryRedirect, startList+token)
 
+	// структура для отправки на API tlg_bot
 	dataClient := &dataClient{
 		Debt:        debt,
 		AccessToken: token,
@@ -163,5 +197,5 @@ func (h *Handler) signInBot(c *gin.Context) { // Обработчик для а�
 	c.Header("Location", botURL)
 	c.Writer.WriteHeader(http.StatusMovedPermanently)
 	// c.AbortWithStatus(http.StatusMovedPermanently)
-	log.Println("ссылка на бота отправлена: ", botURL)
+	log.Println("успешная регистрация тлг бота для пользователя: ", idUser)
 }

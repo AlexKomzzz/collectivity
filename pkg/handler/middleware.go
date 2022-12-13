@@ -7,14 +7,32 @@ const (
 
 /*func (h *Handler) userIdentity(c *gin.Context) (int, error) {
 
-	// выделение из заголовка поля "Authorization"
-	header := c.GetHeader(authorizationHeader)
-	if header == "" {
-		// newErrorResponse(c, http.StatusUnauthorized, "empty auth header")
-		return -1, errors.New("empty auth header")
+	// Получение токена из файла куки
+	session := sessions.Default(c)
+	sessionToken := session.Get("token")
+	if sessionToken == nil {
+		logrus.Println("Вход без идентификации")
+		c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+		return
 	}
 
-	return h.service.ValidToken(header)
+	// парсинг токена
+	idUser, err := h.service.ParseToken(sessionToken.(string))
+	if err != nil {
+		if idUser == -1 {
+			logrus.Println("Вход c протухшим JWT")
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{
+				"error": "Истекло время сеанса",
+			})
+		} else {
+			logrus.Println("Вход с неверным JWT")
+			c.HTML(http.StatusBadRequest, "login.html", gin.H{})
+		}
+		return
+	}
+
+	// запись idUser в контекст
+	c.Set(userCtx, userId)
 }*/
 
 /*
