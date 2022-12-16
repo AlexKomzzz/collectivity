@@ -71,11 +71,11 @@ func main() {
 	// handler := handler.NewHandler(service, handler.NewWebClient(make(map[string][]*websocket.Conn), context.Background()))
 	handler := handler.NewHandler(service)
 
-	server, err := handler.InitRoutes()
-	if err != nil {
+	server := handler.InitRoutes()
+	/*if err != nil {
 		logrus.Fatalf("Error init server: %s", err.Error())
 		return
-	}
+	}*/
 
 	go func() {
 		if err := server.RunTLS(viper.GetString("port"), certFile, keyFile); err != nil {
