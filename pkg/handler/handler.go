@@ -18,7 +18,7 @@ func NewHandler(services *service.Service) *Handler {
 	}
 }
 
-func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализация групп функций мультиплексора
+func (h *Handler) InitRoutes() *gin.Engine { // Инициализация групп функций мультиплексора
 
 	//gin.SetMode(gin.ReleaseMode) // Переключение сервера в режим Релиза из режима Отладка
 
@@ -56,6 +56,17 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		files.POST("/get-file", h.getFile)
 		// отправка данных клиету
 		files.GET("/get-data", h.dataClient)
+	}
+
+	// телеграм бот
+	tlg_bot := mux.Group("/tlg")
+	{
+		// авторизация
+		tlg_bot.GET("/login", h.loginBot)
+		// получение данных при авторизации от пользователя
+		tlg_bot.POST("/sign-in", h.signInBot)
+		// запрос данных
+		tlg_bot.POST("/debt", h.getDebtBot)
 	}
 
 	// авторизация и аутентификация
@@ -114,19 +125,7 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 			yandex.GET("/login", h.oauthYandexLogin)
 			yandex.GET("/callback", h.oauthYandexCallback)
 		}
-
-		// авторизация и регистрация для тлг бота
-		tlg_bot := auth.Group("/tlg")
-		// tlg_bot.Use(sessions.Sessions("tlg_bot", h.service.NewSession()))
-		{
-			// отправка формы авторизации
-			tlg_bot.GET("/login", h.loginBot)
-			// получение данных при авторизации от пользователя
-			tlg_bot.POST("/sign-in", h.signInBot)
-			// запрос данных
-			//tlg_bot.POST("/debt", h.getDataBot)
-		}
 	}
 
-	return mux, nil
+	return mux
 }
