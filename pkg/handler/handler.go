@@ -119,12 +119,12 @@ func (h *Handler) InitRoutes() (*gin.Engine, error) { // Инициализац�
 		tlg_bot := auth.Group("/tlg")
 		// tlg_bot.Use(sessions.Sessions("tlg_bot", h.service.NewSession()))
 		{
-			// отправка формы авторизации
+			// авторизация
 			tlg_bot.GET("/login", h.loginBot)
 			// получение данных при авторизации от пользователя
 			tlg_bot.POST("/sign-in", h.signInBot)
 			// запрос данных
-			//tlg_bot.POST("/debt", h.getDataBot)
+			tlg_bot.POST("/debt", h.getDebtBot)
 		}
 	}
 
