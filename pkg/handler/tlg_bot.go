@@ -129,6 +129,7 @@ func (h *Handler) signInBot(c *gin.Context) {
 
 	c.Set(keyTokenCtx, token)
 	c.Set(keyRedirectURL, redirectURL)
+
 	// отправка токена в АПИ бота
 	h.sendTokenToBot(c)
 }
